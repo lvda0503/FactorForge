@@ -11,7 +11,7 @@
 
 <br>
 
-![FactorRL 系统架构](docs/images/architecture.png)
+![FactorRL 系统架构](docs/images/architecture.svg)
 
 </div>
 

@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 800" width="1500" height="800" font-family="'Segoe UI','PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#0d1930"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#818cf8" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1500" height="800" fill="url(#bg)" rx="20"/>
+
+  <!-- ═══════ header ═══════ -->
+  <text x="52" y="62" font-size="12.5" letter-spacing="3" fill="#7c92b8">QUANTITATIVE TRADING · DEEP REINFORCEMENT LEARNING · A-SHARE DAILY</text>
+  <text x="50" y="102" font-size="30" font-weight="700" fill="#f2f6fc">
+    FactorRL — <tspan fill="url(#accent)">Factor-Informed</tspan> PPO
+  </text>
+  <text x="52" y="131" font-size="16.5" fill="#93a7c8">因子约束的强化学习量化交易框架 · 研究 → 因子 → 训练 → 回测 → 实盘 全链路</text>
+  <text x="1452" y="96" text-anchor="end" font-size="13" fill="#5d7396" font-weight="600">MIT · OPEN SOURCE</text>
+  <rect x="50" y="150" width="1400" height="2.5" rx="1.2" fill="url(#line)"/>
+
+  <!-- ═══════ stage 1 · data ═══════ -->
+  <g>
+    <rect x="40" y="188" width="306" height="426" rx="18" fill="#131f37" stroke="#263758" stroke-width="1.2"/>
+    <rect x="40" y="188" width="306" height="5" rx="2.5" fill="url(#accent)"/>
+    <text x="66" y="227" font-size="20" font-weight="700" fill="#eef4fb">Data &amp; Market</text>
+    <text x="66" y="249" font-size="13.5" fill="#7c92b8">数据与市场环境</text>
+    <text x="312" y="227" font-size="13" fill="#3d4f6f" font-weight="700">01</text>
+    <g font-size="15.5" fill="#cdd9ec">
+      <text x="66" y="312">OHLCV · 12 只 A 股</text>
+      <text x="66" y="335" font-size="12.5" fill="#8497b6">2015–2025 · baostock · 前复权</text>
+      <text x="66" y="392">市场背景 CSI300</text>
+      <text x="66" y="415" font-size="12.5" fill="#8497b6">动量 · 波动 · 量能 · 估值分位</text>
+      <text x="66" y="472">财经新闻源</text>
+      <text x="66" y="495" font-size="12.5" fill="#8497b6">AKShare 日频抓取 → 情绪</text>
+    </g>
+  </g>
+
+  <!-- arrow 1 -->
+  <g fill="none">
+    <line x1="356" y1="400" x2="382" y2="400" stroke="#3d506f" stroke-width="2"/>
+    <path d="M 377 394 L 388 400 L 377 406 Z" fill="#38bdf8"/>
+  </g>
+
+  <!-- ═══════ stage 2 · factor & state ═══════ -->
+  <g>
+    <rect x="398" y="188" width="306" height="426" rx="18" fill="#131f37" stroke="#263758" stroke-width="1.2"/>
+    <rect x="398" y="188" width="306" height="5" rx="2.5" fill="url(#accent)"/>
+    <text x="424" y="227" font-size="20" font-weight="700" fill="#eef4fb">Factor Engine</text>
+    <text x="424" y="249" font-size="13.5" fill="#7c92b8">多因子引擎 · 分层状态</text>
+    <text x="670" y="227" font-size="13" fill="#3d4f6f" font-weight="700">02</text>
+    <g font-size="15.5" fill="#cdd9ec">
+      <text x="424" y="312">20+ 经典因子</text>
+      <text x="424" y="335" font-size="12.5" fill="#8497b6">动量 · 价值 · 质量 · 波动 · 量价</text>
+      <text x="424" y="392">情绪因子（FinBERT）</text>
+      <text x="424" y="415" font-size="12.5" fill="#8497b6">中文金融 BERT · 97.3% 准确率</text>
+      <text x="424" y="472">分层状态空间 79 维</text>
+      <text x="424" y="495" font-size="12.5" fill="#8497b6">价格 60 · 因子 · 组合 3 · 市场 11</text>
+      <text x="424" y="552">选股管线（独立）</text>
+      <text x="424" y="575" font-size="12.5" fill="#8497b6">过滤 → Barra 中性化 → Top-K</text>
+    </g>
+  </g>
+
+  <!-- arrow 2 -->
+  <g fill="none">
+    <line x1="714" y1="400" x2="740" y2="400" stroke="#3d506f" stroke-width="2"/>
+    <path d="M 735 394 L 746 400 L 735 406 Z" fill="#38bdf8"/>
+  </g>
+
+  <!-- ═══════ stage 3 · FI-PPO (hero) ═══════ -->
+  <g>
+    <rect x="756" y="188" width="380" height="426" rx="18" fill="#101b30" stroke="#2f4468" stroke-width="1.6"/>
+    <rect x="756" y="188" width="380" height="6" rx="3" fill="url(#accent)"/>
+    <text x="782" y="227" font-size="20" font-weight="700" fill="#ffffff">FI-PPO Agent</text>
+    <text x="782" y="249" font-size="13.5" fill="#93a7c8">因子约束智能体 · 核心创新</text>
+    <text x="1100" y="227" font-size="13" fill="#4a5e82" font-weight="700">03</text>
+    <g font-size="15.5" fill="#dbe4f3">
+      <text x="782" y="312">Actor–Critic 策略</text>
+      <text x="782" y="335" font-size="12.5" fill="#93a7c8">高斯策略 → 连续动作 ∈ [-1, +1]</text>
+      <text x="782" y="392">环境交互</text>
+      <text x="782" y="415" font-size="12.5" fill="#93a7c8">开盘价撮合 · 硬风控 · A 股费用</text>
+    </g>
+
+    <rect x="782" y="452" width="330" height="138" rx="12" fill="#0d1930" stroke="#2f4468" stroke-width="1.2"/>
+    <rect x="782" y="452" width="330" height="4" rx="2" fill="url(#accent)"/>
+    <text x="947" y="486" text-anchor="middle" font-size="12" letter-spacing="2" fill="#22d3ee" font-weight="700">FACTOR-INFORMED LOSS</text>
+    <text x="947" y="522" text-anchor="middle" font-size="16.5" font-weight="600" font-family="'Consolas','JetBrains Mono',monospace">
+      <tspan fill="#eaf0fb">L_total = L_PPO + </tspan><tspan fill="#22d3ee">λ_IC · L_IC</tspan>
+    </text>
+    <text x="947" y="546" text-anchor="middle" font-size="16.5" font-weight="600" font-family="'Consolas','JetBrains Mono',monospace">
+      <tspan fill="#9fb3d4">+ </tspan><tspan fill="#818cf8">λ_ortho · L_ortho</tspan>
+    </text>
+    <text x="947" y="578" text-anchor="middle" font-size="12.5" fill="#8fa3c4">IC 方向保持 · 因子正交性 · λ 课程式增长 0→γ</text>
+  </g>
+
+  <!-- arrow 3 -->
+  <g fill="none">
+    <line x1="1146" y1="400" x2="1172" y2="400" stroke="#3d506f" stroke-width="2"/>
+    <path d="M 1167 394 L 1178 400 L 1167 406 Z" fill="#38bdf8"/>
+  </g>
+
+  <!-- ═══════ stage 4 · evaluate & live ═══════ -->
+  <g>
+    <rect x="1188" y="188" width="272" height="426" rx="18" fill="#131f37" stroke="#263758" stroke-width="1.2"/>
+    <rect x="1188" y="188" width="272" height="5" rx="2.5" fill="url(#accent)"/>
+    <text x="1214" y="227" font-size="20" font-weight="700" fill="#eef4fb">Evaluate &amp; Live</text>
+    <text x="1214" y="249" font-size="13.5" fill="#7c92b8">回测验证 · 实盘部署</text>
+    <text x="1426" y="227" font-size="13" fill="#3d4f6f" font-weight="700">04</text>
+    <g font-size="15.5" fill="#cdd9ec">
+      <text x="1214" y="312">离线回测</text>
+      <text x="1214" y="335" font-size="12.5" fill="#8497b6">交叉验证 · 未来函数检测</text>
+      <text x="1214" y="392">实验结果</text>
+      <text x="1214" y="415" font-size="12.5" fill="#8497b6">平均夏普 +48% · 100% 存活</text>
+      <text x="1214" y="472">QMT 实盘部署</text>
+      <text x="1214" y="495" font-size="12.5" fill="#8497b6">HTTP 推理 · 文件桥下单</text>
+      <text x="1214" y="552">情绪日频因子</text>
+      <text x="1214" y="575" font-size="12.5" fill="#8497b6">run_daily 每日更新</text>
+    </g>
+  </g>
+
+  <!-- ═══════ footer ═══════ -->
+  <rect x="40" y="654" width="1420" height="82" rx="14" fill="#111c30" stroke="#233351" stroke-width="1"/>
+  <text x="66" y="690" font-size="15" fill="#c7d4ea">One pipeline · 一套代码完成 因子挖掘 → RL 训练 → 组合回测 → QMT 实盘</text>
+  <text x="66" y="716" font-size="12.5" fill="#687d9e">12 只 A 股 × 3 个时间窗口 = 72 组实验 · 2015–2025 · 全部使用免费公开数据</text>
+  <text x="1446" y="704" text-anchor="end" font-size="13" fill="#8fa3c4">Python 3.8+ · PyTorch 2.0+ · Open Source</text>
+</svg>
