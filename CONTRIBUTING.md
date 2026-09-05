@@ -41,7 +41,7 @@ class MyStrategy(Strategy):
 
 ## 提交规范
 
-1. **敏感信息检查**：提交前运行 `git diff --cached | grep -i "[REDACTED]\|account_id"`，确保无账号泄露
+1. **敏感信息检查**：提交前运行 `git diff --cached | grep -iE "your_account|account_id|资金账号|password"`，确保无账号泄露
 2. **路径检查**：确认无硬编码本地路径（`D:\JoinQuant` 等）
 3. **代码风格**：遵循现有代码风格（英文注释优先，核心创新处可用中文）
 4. **测试**：`python -m factor_informed_rl list` 确认策略注册正常
