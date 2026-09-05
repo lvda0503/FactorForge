@@ -1,10 +1,10 @@
-# FI-PPO：因子约束的强化学习量化交易框架
+# FactorRL：因子约束的强化学习量化交易框架
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-orange.svg)](https://pytorch.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Factor-Informed PPO (FI-PPO)**：在 PPO 损失函数中注入因子软约束，使强化学习交易代理在追求收益的同时保持对基本面因子的敏感度。适用于 A 股日频交易的完整研究框架，从因子挖掘、选股、RL 训练到实盘部署。
+> **FactorRL** 将金融因子作为软约束注入强化学习，核心算法 **FI-PPO (Factor-Informed PPO)** 在 PPO 损失函数中加入因子 IC 保持项与正交性项，使交易代理在追求收益的同时保持对基本面因子的敏感度与可解释性。适用于 A 股日频交易的完整研究框架，从因子挖掘、选股、RL 训练到实盘部署。
 
 ---
 
