@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qlib Alpha158 因子库 — 完整参考手册</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #c9d1d9; --text-dim: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --orange: #d2991d; --red: #f85149;
+    --purple: #a371f7; --cyan: #39c5cf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 20px;
+  }
+  h1 { font-size: 2em; margin: 20px 0 10px; color: #fff; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+  h2 { font-size: 1.5em; margin: 40px 0 15px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 1.2em; margin: 25px 0 10px; color: var(--green); }
+  h4 { font-size: 1.05em; margin: 20px 0 8px; color: var(--orange); }
+  p, li { margin: 6px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* TOC */
+  nav.toc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 25px; margin: 20px 0; }
+  nav.toc h2 { margin: 0 0 12px; font-size: 1.2em; color: #fff; border: none; }
+  nav.toc ol { padding-left: 20px; columns: 2; }
+  nav.toc li { margin: 4px 0; font-size: 0.95em; }
+
+  /* Stats bar */
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin: 15px 0; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 18px; text-align: center; min-width: 100px; }
+  .stat .num { font-size: 1.8em; font-weight: bold; color: var(--accent); }
+  .stat .lbl { font-size: 0.85em; color: var(--text-dim); }
+
+  /* Factor card */
+  .factor-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px 25px; margin: 15px 0;
+  }
+  .factor-card h3 { margin-top: 0; }
+  .factor-card .meta { font-size: 0.85em; color: var(--text-dim); margin-bottom: 10px; }
+  .factor-card .meta span { margin-right: 15px; }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;
+    margin-right: 6px;
+  }
+  .tag-kbar { background: #1f3a2c; color: var(--green); }
+  .tag-price { background: #1a2a3a; color: var(--accent); }
+  .tag-momentum { background: #2a1f1a; color: var(--orange); }
+  .tag-volatility { background: #2a1a2a; color: var(--purple); }
+  .tag-volume { background: #1a2a2a; color: var(--cyan); }
+
+  /* Formula block */
+  .formula {
+    background: #0d1117; border-left: 3px solid var(--accent); padding: 12px 16px;
+    margin: 10px 0; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.95em;
+    overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  .formula-code { color: var(--green); }
+  .formula-comment { color: var(--text-dim); }
+
+  /* Variant table */
+  table.variants {
+    width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em;
+  }
+  table.variants th {
+    background: #1c2333; color: var(--accent); padding: 8px 12px; text-align: left;
+    font-weight: 600;
+  }
+  table.variants td { padding: 7px 12px; border-top: 1px solid var(--border); }
+  table.variants tr:hover { background: #1a1f2b; }
+  table.variants code {
+    background: #1c2333; color: var(--green); padding: 1px 6px; border-radius: 3px;
+    font-family: 'Consolas', monospace; font-size: 0.95em;
+  }
+
+  /* Usage box */
+  .usage {
+    background: #121d2a; border: 1px solid #1f4a6b; border-radius: 6px; padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .usage::before { content: "💡 使用建议"; display: block; font-weight: bold; color: var(--accent); margin-bottom: 6px; }
+
+  /* Interpretation */
+  .interpret {
+    background: #1a1f12; border: 1px solid #3a4a1f; border-radius: 6px; padding: 12px 16px; margin: 10px 0;
+  }
+  .interpret::before { content: "📊 如何解读"; display: block; font-weight: bold; color: var(--green); margin-bottom: 6px; }
+
+  /* Category header */
+  .cat-header {
+    background: linear-gradient(135deg, #1c2333, #161b22); border: 1px solid var(--border);
+    border-radius: 8px; padding: 15px 20px; margin: 30px 0 15px;
+  }
+  .cat-header h2 { margin: 0 0 5px; border: none; }
+  .cat-header p { color: var(--text-dim); margin: 0; }
+
+  /* Quick ref grid */
+  .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin: 10px 0; }
+  .quick-item {
+    background: #1c2333; border: 1px solid var(--border); border-radius: 4px;
+    padding: 6px 10px; font-family: 'Consolas', monospace; font-size: 0.85em;
+    text-align: center;
+  }
+  .quick-item:hover { border-color: var(--accent); cursor: default; }
+</style>
+</head>
+<body>
+
+<h1>📚 Qlib Alpha158 因子库 — 完整参考手册</h1>
+
+<p style="color: var(--text-dim);">基于 Microsoft Qlib Alpha158，翻译为聚宽平台兼容的 <code>jqfactor.Factor</code> 子类。共 159 个因子，每个都可在聚宽策略中直接使用。</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">159</div><div class="lbl">总因子数</div></div>
+  <div class="stat"><div class="num">9</div><div class="lbl">K-bar 形态</div></div>
+  <div class="stat"><div class="num">4</div><div class="lbl">标准化价格</div></div>
+  <div class="stat"><div class="num">1</div><div class="lbl">成交量</div></div>
+  <div class="stat"><div class="num">145</div><div class="lbl">滚动算子</div></div>
+  <div class="stat"><div class="num">29</div><div class="lbl">算子种类</div></div>
+  <div class="stat"><div class="num">5</div><div class="lbl">窗口大小</div></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ============================================================ -->
+<nav class="toc">
+<h2>📑 目录</h2>
+<ol>
+  <li><a href="#sec1">K-bar 形态因子 (9个)</a></li>
+  <li><a href="#sec2">标准化价格因子 (4个)</a></li>
+  <li><a href="#sec3">成交量因子 (1个)</a></li>
+  <li><a href="#sec4">动量因子 — ROC (5个)</a></li>
+  <li><a href="#sec5">均线因子 — MA (5个)</a></li>
+  <li><a href="#sec6">波动率因子 — STD (5个)</a></li>
+  <li><a href="#sec7">趋势因子 — BETA / RSQR / RESI (15个)</a></li>
+  <li><a href="#sec8">极值与分位因子 — MAX / MIN / QTLU / QTLD (20个)</a></li>
+  <li><a href="#sec9">价格位置因子 — RANK / RSV (10个)</a></li>
+  <li><a href="#sec10">Aroon 因子 — IMAX / IMIN / IMXD (15个)</a></li>
+  <li><a href="#sec11">量价相关性因子 — CORR / CORD (10个)</a></li>
+  <li><a href="#sec12">涨跌比例因子 — CNTP / CNTN / CNTD (15个)</a></li>
+  <li><a href="#sec13">RSI 类因子 — SUMP / SUMN / SUMD (15个)</a></li>
+  <li><a href="#sec14">成交量形态因子 — VMA / VSTD / WVMA / VSUMP / VSUMN / VSUMD (30个)</a></li>
+  <li><a href="#sec15">因子选择速查表</a></li>
+  <li><a href="#sec16">在聚宽中使用</a></li>
+</ol>
+</nav>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: K-BAR -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec1">一、K-bar 形态因子 <span class="tag tag-kbar">9个</span></h2>
+<p>基于当日 OHLC 四个价格计算的 K 线形态特征，衡量日内多空力量对比。无需历史回溯，max_window=1。</p>
+</div>
+
+<div class="factor-card">
+<h3>KMID — K线实体涨幅</h3>
+<div class="meta"><span>🔧 依赖: open, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KMID = <span class="formula-code">(Close − Open) / Open</span></div>
+<div class="interpret">
+  正值 = 收阳（收盘高于开盘），负值 = 收阴。<br>
+  值越大表示买盘越强，实体越长。正负 2% 以上为显著。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KLEN — K线振幅</h3>
+<div class="meta"><span>🔧 依赖: open, high, low</span><span>📐 max_window: 1</span></div>
+<div class="formula">KLEN = <span class="formula-code">(High − Low) / Open</span></div>
+<div class="interpret">
+  衡量日内价格波动幅度。值越大=波动越剧烈。5% 以上为高波动日。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KMID2 — 标准化K线实体</h3>
+<div class="meta"><span>🔧 依赖: open, high, low, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KMID2 = <span class="formula-code">(Close − Open) / (High − Low + 1e⁻¹²)</span></div>
+<div class="interpret">
+  排除了振幅影响的纯实体强度。接近 +1 = 光头光脚阳线（极端强势），接近 -1 = 光头光脚阴线（极端弱势），接近 0 = 十字星（多空平衡）。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KUP — 上影线比例</h3>
+<div class="meta"><span>🔧 依赖: open, high, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KUP = <span class="formula-code">(High − max(Open, Close)) / Open</span></div>
+<div class="interpret">
+  上影线越长，说明高位卖压越大。> 2% 表示明显遇阻回落。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KUP2 — 标准化上影线</h3>
+<div class="meta"><span>🔧 依赖: open, high, low, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KUP2 = <span class="formula-code">(High − max(Open, Close)) / (High − Low + 1e⁻¹²)</span></div>
+<div class="interpret">
+  标准化版本。接近 1 = 长上影十字或倒锤头（典型见顶信号）。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KLOW — 下影线比例</h3>
+<div class="meta"><span>🔧 依赖: open, low, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KLOW = <span class="formula-code">(min(Open, Close) − Low) / Open</span></div>
+<div class="interpret">
+  下影线越长，说明低位买盘越强。> 2% 表示明显探底回升。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KLOW2 — 标准化下影线</h3>
+<div class="meta"><span>🔧 依赖: open, high, low, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KLOW2 = <span class="formula-code">(min(Open, Close) − Low) / (High − Low + 1e⁻¹²)</span></div>
+<div class="interpret">
+  接近 1 = 长下影锤子线（典型见底信号）。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KSFT — 价格位移</h3>
+<div class="meta"><span>🔧 依赖: open, high, low, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KSFT = <span class="formula-code">(2×Close − High − Low) / Open</span></div>
+<div class="interpret">
+  收盘价相对于日内中点的偏移。正值=收在偏上方，负值=收在偏下方。衡量收盘强势程度。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>KSFT2 — 标准化价格位移</h3>
+<div class="meta"><span>🔧 依赖: open, high, low, close</span><span>📐 max_window: 1</span></div>
+<div class="formula">KSFT2 = <span class="formula-code">(2×Close − High − Low) / (High − Low + 1e⁻¹²)</span></div>
+<div class="interpret">
+  标准化版本。+1 = 收在最高（最强），-1 = 收在最低（最弱）。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: PRICE -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec2">二、标准化价格因子 <span class="tag tag-price">4个</span></h2>
+<p>当日各价格除以收盘价进行去量纲化，使不同价位的股票可以横向比较。</p>
+</div>
+
+<div class="quick-grid">
+  <div class="quick-item">OPEN0 = Open/Close</div>
+  <div class="quick-item">HIGH0 = High/Close</div>
+  <div class="quick-item">LOW0 = Low/Close</div>
+  <div class="quick-item">VWAP0 = VWAP/Close</div>
+</div>
+
+<div class="factor-card">
+<h3>OPEN0 / HIGH0 / LOW0 / VWAP0</h3>
+<div class="meta"><span>🔧 依赖: open/high/low, close (VWAP0 需 money+volume)</span><span>📐 max_window: 1</span></div>
+<div class="formula">
+<span class="formula-code">OPEN0  = Open  / Close</span>    <span class="formula-comment"># 开盘价相对于收盘价</span>
+<span class="formula-code">HIGH0  = High  / Close</span>    <span class="formula-comment"># 最高价相对于收盘价</span>
+<span class="formula-code">LOW0   = Low   / Close</span>    <span class="formula-comment"># 最低价相对于收盘价</span>
+<span class="formula-code">VWAP0  = VWAP  / Close</span>    <span class="formula-comment"># 均价相对于收盘价 (VWAP=成交额/成交量)</span>
+</div>
+<div class="interpret">
+  以收盘价为基准的归一化。OPEN0 &lt; 1 表示高开，&gt; 1 表示低开。<br>
+  HIGH0 越接近 1 表示日内波动小，越远离 1 表示上影或冲高。<br>
+  VWAP0 &lt; 1 表示收盘价高于均价（尾盘强势），&gt; 1 表示收盘低于均价（尾盘弱势）。
+</div>
+<div class="usage">通常用作其他因子的控制变量，或在 ML 模型中作为输入特征。单独使用选股能力较弱。</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: VOLUME -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec3">三、成交量因子 <span class="tag tag-volume">1个</span></h2>
+<p>原始成交量标准化，消除不同股票之间的量级差异。</p>
+</div>
+
+<div class="factor-card">
+<h3>VOLUME0</h3>
+<div class="meta"><span>🔧 依赖: volume</span><span>📐 max_window: 1</span></div>
+<div class="formula">VOLUME0 = <span class="formula-code">Volume / (Volume + 1e⁻¹²) ≈ 1</span></div>
+<div class="interpret">实际值恒为 1（自除）。这个因子通常配合其他成交量因子使用。完整 Alpha158 默认配置中不包含 volume 因子。</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: ROC — MOMENTUM -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec4">四、动量因子 — ROC (Rate of Change) <span class="tag tag-momentum">5个</span></h2>
+<p>衡量价格在过去 N 天内的变化幅度，是最经典的趋势跟踪因子。</p>
+</div>
+
+<div class="factor-card">
+<h3>ROC5 / ROC10 / ROC20 / ROC30 / ROC60</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 6~61</span></div>
+<div class="formula">
+<span class="formula-code">ROC(d) = Close[t−d] / Close[t]</span>
+
+<span class="formula-comment"># 原始 Qlib 表达式: Ref($close, d) / $close</span>
+<span class="formula-comment"># d 天前的收盘价 / 今天的收盘价</span>
+</div>
+<div class="interpret">
+  ROC &gt; 1：过去 d 天价格上涨（值越大涨幅越大）<br>
+  ROC = 1：价格不变<br>
+  ROC &lt; 1：过去 d 天价格下跌<br><br>
+  举例：ROCE20 = 1.15 表示 20 天前价格只有现在的 87%，即涨了 15%。<br>
+  ROCE20 = 0.85 表示跌了 15%。
+</div>
+<div class="usage">
+  <strong>正向因子</strong>：ROC 越大越好（动量效应）。<br>
+  在 A 股中，20 日和 60 日动量效果较好；5 日可能捕捉短期反转。
+</div>
+<table class="variants">
+  <tr><th>因子名</th><th>窗口</th><th>max_window</th><th>衡量</th></tr>
+  <tr><td><code>ROC5</code></td><td>5天</td><td>6</td><td>周度动量</td></tr>
+  <tr><td><code>ROC10</code></td><td>10天</td><td>11</td><td>双周动量</td></tr>
+  <tr><td><code>ROC20</code></td><td>20天</td><td>21</td><td>月度动量</td></tr>
+  <tr><td><code>ROC30</code></td><td>30天</td><td>31</td><td>月半动量</td></tr>
+  <tr><td><code>ROC60</code></td><td>60天</td><td>61</td><td>季度动量</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: MA -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec5">五、均线因子 — MA (Moving Average) <span class="tag tag-momentum">5个</span></h2>
+<p>简单移动平均相对当前价格的比值，衡量当前价格在均线上方还是下方。</p>
+</div>
+
+<div class="factor-card">
+<h3>MA5 / MA10 / MA20 / MA30 / MA60</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">MA(d) = Mean(Close[t−d+1 : t]) / Close[t]</span>
+
+<span class="formula-comment"># Qlib: Mean($close, d) / $close</span>
+<span class="formula-comment"># d 日均值 / 当日收盘价</span>
+</div>
+<div class="interpret">
+  MA &lt; 1：收盘价在均线 <strong>上方</strong>（多头排列）<br>
+  MA &gt; 1：收盘价在均线 <strong>下方</strong>（空头排列）<br>
+  MA = 1：价格正好在均线上<br><br>
+  注意：MA 值 <strong>越小</strong> 表示价格相对均线越高，和直觉相反！
+</div>
+<div class="usage">
+  <strong>反向因子</strong>（MA 越小越好）。常配合 ROC 使用 —— ROC 看方向，MA 看位置。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: STD -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec6">六、波动率因子 — STD <span class="tag tag-volatility">5个</span></h2>
+<p>收盘价的标准差相对于当前价格，衡量近期价格波动的剧烈程度。</p>
+</div>
+
+<div class="factor-card">
+<h3>STD5 / STD10 / STD20 / STD30 / STD60</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">STD(d) = Std(Close[t−d+1 : t]) / Close[t]</span>
+
+<span class="formula-comment"># Qlib: Std($close, d) / $close</span>
+</div>
+<div class="interpret">
+  高 STD：近期价格波动大，不确定性高，风险溢价可能也高。<br>
+  低 STD：价格平稳，横盘整理中。<br>
+  极端高 STD 可能暗示恐慌或暴涨后的不稳定。
+</div>
+<div class="usage">
+  <strong>中性因子</strong>。适中的波动率配合动量效果更好（"稳中带涨"）。<br>
+  也可以用来过滤高波动股票，降低组合风险。<br>
+  STD20 > 5% 视为高波动，STD20 < 1% 视为低波动。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: TREND -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec7">七、趋势因子 — BETA / RSQR / RESI <span class="tag tag-momentum">15个</span></h2>
+<p>对过去 N 天收盘价做线性回归，提取斜率和拟合度，比简单的 ROC 更能捕捉趋势的强度和稳定性。</p>
+</div>
+
+<div class="factor-card">
+<h3>BETA5~60 — 价格趋势斜率</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">BETA(d) = β / Close[t]</span>
+
+<span class="formula-comment"># β = Cov(天数序列, 收盘价序列) / Var(天数序列)</span>
+<span class="formula-comment"># Qlib: Slope($close, d) / $close</span>
+<span class="formula-comment"># 即：对过去 d 天收盘价做 y = α + β·x 回归，β 为斜率</span>
+</div>
+<div class="interpret">
+  BETA &gt; 0：上升趋势（斜率越大=涨得越快）<br>
+  BETA &lt; 0：下降趋势<br>
+  接近 0：横盘无趋势<br><br>
+  与 ROC 的区别：ROC 只看首尾，BETA 考虑了整段路径，对噪音更鲁棒。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>RSQR5~60 — 趋势拟合度 (R²)</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">RSQR(d) = R² = 1 − SS_residual / SS_total</span>
+
+<span class="formula-comment"># Qlib: Rsquare($close, d)</span>
+<span class="formula-comment"># 线性回归的决定系数，衡量价格走势有多"直"</span>
+</div>
+<div class="interpret">
+  RSQR 接近 1：价格走势非常线性（趋势明确，无论涨跌）<br>
+  RSQR 接近 0：价格走势杂乱无章（震荡、反复）<br><br>
+  <strong>配合 BETA 使用</strong>：BETA>0 且 RSQR>0.7 = 稳健上升趋势（高确定性）。<br>
+  BETA>0 但 RSQR<0.3 = 虽有涨幅但波动大，趋势不可靠。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>RESI5~60 — 趋势偏离残差</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">RESI(d) = (Close[t] − ŷ[t]) / Close[t]</span>
+
+<span class="formula-comment"># ŷ[t] = α + β · (d−1)  即回归线对今天的预测值</span>
+<span class="formula-comment"># Qlib: Resi($close, d) / $close</span>
+</div>
+<div class="interpret">
+  RESI &gt; 0：今天收盘价 <strong>高于</strong> 趋势线预测（超预期走强，可能加速）<br>
+  RESI &lt; 0：今天收盘价 <strong>低于</strong> 趋势线预测（走弱，可能反转）<br>
+  接近 0：价格精准落在趋势线上<br><br>
+  这是 <strong>短期择时信号</strong>：RESI 正值可能预示趋势加速。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 8: EXTREMA -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec8">八、极值与分位因子 — MAX / MIN / QTLU / QTLD <span class="tag tag-price">20个</span></h2>
+<p>衡量当前价格在过去 N 天的价格区间中所处的位置。</p>
+</div>
+
+<div class="factor-card">
+<h3>MAX5~60 — N日最高价</h3>
+<div class="meta"><span>🔧 依赖: close, high</span><span>📐 max_window: 5~60</span></div>
+<div class="formula"><span class="formula-code">MAX(d) = Max(High[t−d+1 : t]) / Close[t]</span></div>
+<div class="interpret">接近 1 = 价格接近 N 日新高。>1 = 正常（历史高点除以当前价格）。</div>
+</div>
+
+<div class="factor-card">
+<h3>MIN5~60 — N日最低价</h3>
+<div class="meta"><span>🔧 依赖: close, low</span><span>📐 max_window: 5~60</span></div>
+<div class="formula"><span class="formula-code">MIN(d) = Min(Low[t−d+1 : t]) / Close[t]</span></div>
+<div class="interpret">接近 1 = 价格接近 N 日新低。<1 = 正常（历史低点低于当前价）。MIN 越小表示当前价越高于历史低点。</div>
+</div>
+
+<div class="factor-card">
+<h3>QTLU5~60 — N日收盘价 80% 分位数</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula"><span class="formula-code">QTLU(d) = Quantile₀.₈(Close[t−d+1 : t]) / Close[t]</span></div>
+<div class="interpret">QTLU &lt; 1 = 当前价超过了过去 80% 的价格水平（处于高位）；QTLU &gt; 1 = 当前价低于 80% 分位。</div>
+</div>
+
+<div class="factor-card">
+<h3>QTLD5~60 — N日收盘价 20% 分位数</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula"><span class="formula-code">QTLD(d) = Quantile₀.₂(Close[t−d+1 : t]) / Close[t]</span></div>
+<div class="interpret">QTLD &lt; 1 = 当前价远高于 20% 分位（不是底部）；QTLD &gt; 1 = 当前价接近或低于 20% 分位（处于低位）。</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 9: RANK/RSV -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec9">九、价格位置因子 — RANK / RSV <span class="tag tag-price">10个</span></h2>
+<p>精确衡量当前价格在过去 N 天中的相对排名和位置。</p>
+</div>
+
+<div class="factor-card">
+<h3>RANK5~60 — 价格百分位排名</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">RANK(d) = Rank_In_Window(Close[t], Close[t−d+1 : t]) / d</span>
+
+<span class="formula-comment"># 返回 0~1，当前价在 d 天窗口中的排名百分位</span>
+</div>
+<div class="interpret">
+  RANK → 1.0：当前价是 N 天内的最高价（处于高位，可能超买）<br>
+  RANK → 0.0：当前价是 N 天内的最低价（处于低位，可能超卖）<br>
+  RANK ≈ 0.5：当前价在 N 天中间位置<br><br>
+  ⚠️ <strong>注意方向</strong>：RANK 高意味着价格在高位，可能考虑<strong>反转逻辑</strong>（做空高位股）或<strong>动量逻辑</strong>（强者恒强），取决于你的策略风格。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>RSV5~60 — 价格区间位置 (KDJ 同源)</h3>
+<div class="meta"><span>🔧 依赖: close, high, low</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">RSV(d) = (Close[t] − Min(Low, d)) / (Max(High, d) − Min(Low, d) + 1e⁻¹²)</span>
+
+<span class="formula-comment"># 这是 KDJ 指标的原始 RSV 值</span>
+</div>
+<div class="interpret">
+  RSV = 1.0：当前收盘 = N 日最高价（极端高位）<br>
+  RSV = 0.0：当前收盘 = N 日最低价（极端低位）<br>
+  RSV = 0.5：当前价在 N 日区间正中间<br><br>
+  与 RANK 的区别：RSV 考虑的是价格在「最高-最低」区间的位置，RANK 是收盘价之间的排名。RSV 对极端波动更敏感。
+</div>
+<div class="usage">
+  RSV &gt; 0.8 且 RANK &gt; 0.8 → 价在历史高位且接近区间上沿，超买信号强烈。<br>
+  RSV &lt; 0.2 且 RANK &lt; 0.2 → 超卖信号强烈。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 10: AROON -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec10">十、Aroon 指标因子 — IMAX / IMIN / IMXD <span class="tag tag-momentum">15个</span></h2>
+<p>Aroon 指标衡量距上次创新高/新低的时间长短，用于判断趋势强度和方向。</p>
+</div>
+
+<div class="factor-card">
+<h3>IMAX5~60 — Aroon Up（距新高时间）</h3>
+<div class="meta"><span>🔧 依赖: high</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">IMAX(d) = Days_Since_Max(High, d) / d</span>
+
+<span class="formula-comment"># 距 N 日内最高价出现日过去了多少天 / N</span>
+</div>
+<div class="interpret">
+  IMAX = 0：今天就是 N 日高点（最强势）<br>
+  IMAX = 1：N 天前是高点，之后一直在跌（最弱势）<br>
+  IMAX < 0.3：近期有新高，趋势向上<br>
+  IMAX > 0.7：很久没有新高，趋势偏弱
+</div>
+</div>
+
+<div class="factor-card">
+<h3>IMIN5~60 — Aroon Down（距新低时间）</h3>
+<div class="meta"><span>🔧 依赖: low</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">IMIN(d) = Days_Since_Min(Low, d) / d</span>
+
+<span class="formula-comment"># 距 N 日内最低价出现日过去了多少天 / N</span>
+</div>
+<div class="interpret">
+  IMIN = 0：今天就是 N 日低点（最弱势）<br>
+  IMIN = 1：N 天前是低点，之后一直在涨（最强势）<br>
+  配合 IMAX：IMAX 小 + IMIN 大 = 强势上涨；IMAX 大 + IMIN 小 = 弱势下跌
+</div>
+</div>
+
+<div class="factor-card">
+<h3>IMXD5~60 — Aroon 差值</h3>
+<div class="meta"><span>🔧 依赖: high, low</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">IMXD(d) = (IdxMax(High,d) − IdxMin(Low,d)) / d</span>
+</div>
+<div class="interpret">
+  IMXD &gt; 0：高点先于低点出现（下跌趋势中）<br>
+  IMXD &lt; 0：低点先于高点出现（上涨趋势中）<br>
+  接近 0：高点和低点同时或趋势不明<br><br>
+  IMXD 本质上 = Aroon_Up − Aroon_Down 的相反数。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 11: CORRELATION -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec11">十一、量价相关性因子 — CORR / CORD <span class="tag tag-volume">10个</span></h2>
+<p>衡量价格与成交量、价格变化率与成交量变化率之间的联动关系。</p>
+</div>
+
+<div class="factor-card">
+<h3>CORR5~60 — 价量相关性</h3>
+<div class="meta"><span>🔧 依赖: close, volume</span><span>📐 max_window: 5~60</span></div>
+<div class="formula">
+<span class="formula-code">CORR(d) = Corr(Close, Ln(Volume+1), d)</span>
+
+<span class="formula-comment"># 过去 d 天收盘价与对数成交量的皮尔逊相关系数</span>
+</div>
+<div class="interpret">
+  CORR → +1：价量同向（涨时放量，跌时缩量 = 健康的量价配合）<br>
+  CORR → -1：价量背离（涨时缩量，跌时放量 = 不健康的信号）<br>
+  CORR ≈ 0：价量无关联<br><br>
+  <strong>正向因子</strong>：价量同向配合通常意味着趋势有成交量支撑。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>CORD5~60 — 收益率-量变相关性</h3>
+<div class="meta"><span>🔧 依赖: close, volume</span><span>📐 max_window: 6~61</span></div>
+<div class="formula">
+<span class="formula-code">CORD(d) = Corr(Return, Ln(1 + ΔVolume), d)</span>
+
+<span class="formula-comment"># Return = Close/Ref(Close,1) − 1</span>
+<span class="formula-comment"># ΔVolume = Volume/Ref(Volume,1) − 1</span>
+<span class="formula-comment"># 日收益率与日成交量变化率的相关性</span>
+</div>
+<div class="interpret">
+  比 CORR 更精细：用「变化率」替代「绝对水平」，剔除趋势性影响。<br>
+  CORD > 0：放量日涨，缩量日跌（健康）<br>
+  CORD < 0：放量日跌，缩量日涨（警惕）
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 12: CNT -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec12">十二、涨跌比例因子 — CNTP / CNTN / CNTD <span class="tag tag-momentum">15个</span></h2>
+<p>统计过去 N 天的涨跌天数比例，反映多空力量的持续性。</p>
+</div>
+
+<div class="quick-grid">
+  <div class="quick-item">CNTP = 上涨天数/d</div>
+  <div class="quick-item">CNTN = 下跌天数/d</div>
+  <div class="quick-item">CNTD = CNTP − CNTN</div>
+</div>
+
+<div class="factor-card">
+<h3>CNTP(d) / CNTN(d) / CNTD(d)</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 6~61</span></div>
+<div class="formula">
+<span class="formula-code">CNTP(d) = Count(Close &gt; Ref(Close,1), d) / d</span>    <span class="formula-comment"># 上涨天数比例</span>
+<span class="formula-code">CNTN(d) = Count(Close &lt; Ref(Close,1), d) / d</span>    <span class="formula-comment"># 下跌天数比例</span>
+<span class="formula-code">CNTD(d) = CNTP − CNTN</span>                              <span class="formula-comment"># 净涨跌天数比例，范围 [−1, +1]</span>
+</div>
+<div class="interpret">
+  CNTP=0.7 且 CNTN=0.3：过去 N 天 70% 的日子在涨 → 多头主导。<br>
+  CNTD → +1：连续上涨，强势多头。<br>
+  CNTD → -1：连续下跌，弱势空头。<br>
+  CNTD ≈ 0：涨跌参半，震荡格局。<br><br>
+  与 ROC 的区别：ROC 看幅度，CNT 看天数频率。一只股票可能 CNTP 高但 ROC 低（小涨多天），或 CNTP 低但 ROC 高（一天暴涨）。
+</div>
+<div class="usage"><strong>正向因子</strong>。CNTD 越大越好。CNTD20 > 0.3 表示过去一个月明显偏多。</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 13: RSI -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec13">十三、RSI 类强度因子 — SUMP / SUMN / SUMD <span class="tag tag-momentum">15个</span></h2>
+<p>类似 RSI 指标的概念：涨幅占总波动的比例，衡量上涨力量 vs 下跌力量。</p>
+</div>
+
+<div class="quick-grid">
+  <div class="quick-item">SUMP = Σ涨幅/Σ总波动</div>
+  <div class="quick-item">SUMN = Σ跌幅/Σ总波动</div>
+  <div class="quick-item">SUMD = SUMP − SUMN</div>
+</div>
+
+<div class="factor-card">
+<h3>SUMP(d) / SUMN(d) / SUMD(d)</h3>
+<div class="meta"><span>🔧 依赖: close</span><span>📐 max_window: 6~61</span></div>
+<div class="formula">
+<span class="formula-code">SUMP(d) = Σmax(ΔClose,0) / Σ|ΔClose|</span>           <span class="formula-comment"># 涨幅占绝对波动的比例 → RSI 类指标</span>
+<span class="formula-code">SUMN(d) = Σmax(−ΔClose,0) / Σ|ΔClose|</span>          <span class="formula-comment"># 跌幅占绝对波动的比例</span>
+<span class="formula-code">SUMD(d) = (ΣΔClose) / Σ|ΔClose|</span>                 <span class="formula-comment"># 净涨跌 / 总波动 → 范围 [−1, +1]</span>
+
+<span class="formula-comment"># 注意：SUMP + SUMN ≡ 1，SUMD = SUMP − SUMN = 2×SUMP − 1</span>
+</div>
+<div class="interpret">
+  SUMP=0.7 且 SUMN=0.3：涨幅占 70% 的波动能量 → 多头力量远超空头。<br>
+  SUMP=0.3 且 SUMN=0.7：跌幅占主导 → 空头主导。<br>
+  SUMD > 0.5：显著偏多。SUMD < -0.5：显著偏空。<br><br>
+  与 CNTD 的区别：CNTD 只计天数（涨了几天），SUMD 计幅度（涨了多少）。<br>
+  一只股票可能连涨多天但都是小阳线（CNTD 高，SUMD 一般），也可能一根大阳线逆转（CNTD 低，SUMD 高）。
+</div>
+<div class="usage">
+  <strong>正向因子</strong>。SUMD 的效果通常优于 CNTD（幅度信息更丰富）。<br>
+  SUMP 也可用于构建"稳定上涨"的因子：ROC>1 且 SUMP>0.6。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 14: VOLUME PATTERN -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec14">十四、成交量形态因子 — VMA / VSTD / WVMA / VSUMP / VSUMN / VSUMD <span class="tag tag-volume">30个</span></h2>
+<p>成交量自身的趋势、波动和力量对比。量在价先，成交量形态对价格走势有预判作用。</p>
+</div>
+
+<div class="factor-card">
+<h3>VMA5~60 — 成交量均线</h3>
+<div class="meta"><span>🔧 依赖: volume</span><span>📐 max_window: 5~60</span></div>
+<div class="formula"><span class="formula-code">VMA(d) = Mean(Volume, d) / (Volume[t] + 1e⁻¹²)</span></div>
+<div class="interpret">
+  VMA &gt; 1：当日成交量低于 N 日均量（缩量）<br>
+  VMA &lt; 1：当日成交量高于 N 日均量（放量）<br>
+  VMA 越小 = 放量越明显。<br>
+  放量上涨 = 强势确认；放量下跌 = 恐慌出逃；缩量上涨 = 动力不足。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>VSTD5~60 — 成交量波动率</h3>
+<div class="meta"><span>🔧 依赖: volume</span><span>📐 max_window: 5~60</span></div>
+<div class="formula"><span class="formula-code">VSTD(d) = Std(Volume, d) / (Volume[t] + 1e⁻¹²)</span></div>
+<div class="interpret">高 VSTD = 成交量忽大忽小（不稳定），低 VSTD = 成交量稳定。异常放量日会拉高 VSTD，值得警惕。</div>
+</div>
+
+<div class="factor-card">
+<h3>WVMA5~60 — 成交量加权价格波动率</h3>
+<div class="meta"><span>🔧 依赖: close, volume</span><span>📐 max_window: 6~61</span></div>
+<div class="formula">
+<span class="formula-code">WVMA(d) = Std(|Return| × Volume, d) / (Mean(|Return| × Volume, d) + 1e⁻¹²)</span>
+
+<span class="formula-comment"># 放量日的价格波动幅度是否稳定</span>
+</div>
+<div class="interpret">
+  高 WVMA：大成交量日的价格波动幅度差异大（量价关系不稳定）<br>
+  低 WVMA：无论放量缩量，价格波动幅度相对一致（量价关系稳定）<br>
+  这是衡量<strong>量价结构质量</strong>的指标。
+</div>
+</div>
+
+<div class="factor-card">
+<h3>VSUMP(d) / VSUMN(d) / VSUMD(d) — 成交量 RSI</h3>
+<div class="meta"><span>🔧 依赖: volume</span><span>📐 max_window: 6~61</span></div>
+<div class="formula">
+<span class="formula-code">VSUMP(d) = Σmax(ΔVol,0) / Σ|ΔVol|</span>             <span class="formula-comment"># 放量天数占绝对量变的比例</span>
+<span class="formula-code">VSUMN(d) = Σmax(−ΔVol,0) / Σ|ΔVol|</span>            <span class="formula-comment"># 缩量天数占绝对量变的比例</span>
+<span class="formula-code">VSUMD(d) = (ΣΔVol) / Σ|ΔVol|</span>                   <span class="formula-comment"># 净放量比例</span>
+</div>
+<div class="interpret">
+  VSUMD &gt; 0：成交量整体在放大（= 市场关注度上升）<br>
+  VSUMD &lt; 0：成交量整体在萎缩（= 市场关注度下降）<br><br>
+  <strong>经典组合</strong>：VSUMD>0（量升）+ ROC20>1（价涨）= 量价齐升，牛市信号。<br>
+  VSUMD>0（量升）+ ROC20<1（价跌）= 放量下跌，危险信号。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 15: SELECTION GUIDE -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec15">十五、因子选择速查表</h2>
+<p>根据你的策略风格和目标，快速选择适合的因子组合。</p>
+</div>
+
+<div class="factor-card">
+<table class="variants" style="font-size:1em;">
+  <tr><th style="width:20%">策略风格</th><th style="width:40%">推荐因子组合</th><th>逻辑</th></tr>
+  <tr>
+    <td>📈 <strong>趋势跟踪</strong></td>
+    <td><code>ROC20</code> <code>BETA20</code> <code>RSQR20</code> <code>IMAX20</code></td>
+    <td>动量+趋势强度+新高确认</td>
+  </tr>
+  <tr>
+    <td>🔄 <strong>均值回归</strong></td>
+    <td><code>RSV10</code> <code>RANK10</code> <code>RESI10</code> <code>KLOW2</code></td>
+    <td>超卖位置+残差反转+锤子线</td>
+  </tr>
+  <tr>
+    <td>💎 <strong>质量选股</strong></td>
+    <td><code>CORR20</code> <code>CORD20</code> <code>WVMA20</code> <code>RSQR60</code></td>
+    <td>健康量价配合+稳定趋势+低噪音</td>
+  </tr>
+  <tr>
+    <td>⚡ <strong>短期交易</strong></td>
+    <td><code>ROC5</code> <code>RSV5</code> <code>IMAX5</code> <code>VMA5</code> <code>KMID</code></td>
+    <td>5日动量+日内形态+放量信号</td>
+  </tr>
+  <tr>
+    <td>🏛️ <strong>中长线投资</strong></td>
+    <td><code>ROC60</code> <code>BETA60</code> <code>RSQR60</code> <code>CNTD60</code> <code>SUMD60</code></td>
+    <td>季度趋势+涨跌天数+RSI强度</td>
+  </tr>
+  <tr>
+    <td>🛡️ <strong>低波动策略</strong></td>
+    <td><code>STD20</code> <code>MAX20</code> <code>MIN20</code> <code>VSTD20</code> <code>STD60</code></td>
+    <td>低价格波动+低量波动（过滤掉）</td>
+  </tr>
+  <tr>
+    <td>🔍 <strong>反转捕捉</strong></td>
+    <td><code>KUP2</code> <code>KLOW2</code> <code>KSFT2</code> <code>CNTN5</code> <code>SUMN5</code></td>
+    <td>K线形态+连跌后的反弹机会</td>
+  </tr>
+</table>
+</div>
+
+<h3>因子数量建议</h3>
+<div class="factor-card">
+  <table class="variants" style="font-size:1em;">
+    <tr><th>因子数量</th><th>适用场景</th><th>注意事项</th></tr>
+    <tr><td>3-5 个</td><td>初期测试、单一策略风格</td><td>覆盖至少 2 个维度（如动量+质量）</td></tr>
+    <tr><td>6-10 个</td><td>成熟策略、多维度覆盖</td><td>确保因子间相关性 < 0.6</td></tr>
+    <tr><td>10-15 个</td><td>ML 模型输入、综合打分</td><td>需要特征选择（LASSO/IC过滤）</td></tr>
+    <tr><td>15+ 个</td><td>深度学习模型</td><td>强烈建议做特征降维</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 16: USAGE -->
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="sec16">十六、在聚宽策略中使用</h2>
+</div>
+
+<div class="factor-card">
+<h3>基础用法</h3>
+<div class="formula">
+<span class="formula-comment"># 1. 导入因子类</span>
+<span class="formula-code">from qlib_alpha158_factors import *</span>
+
+<span class="formula-comment"># 2. 在策略中计算因子值</span>
+<span class="formula-code">factor_values = get_factor_values(context, [
+    KMID(), KLEN(),           # K-bar 形态
+    ROC20(), ROC60(),         # 动量
+    BETA20(), RSQR20(),       # 趋势强度
+    RSV14(), RANK20(),        # 价格位置
+    STD20(),                  # 波动率
+    CORR20(), CNTD20(),       # 量价+涨跌比
+    VMA20(), VSUMD20(),       # 成交量形态
+], universe)</span>
+
+<span class="formula-comment"># 3. 合成最终因子</span>
+<span class="formula-code">final = sum(v.rank() for v in factor_values.values())</span>
+</div>
+</div>
+
+<div class="factor-card">
+<h3>按风格分组使用（推荐）</h3>
+<div class="formula">
+<span class="formula-comment"># 动量组 — 正向因子</span>
+<span class="formula-code">momentum = (
+    0.3 * factor_values['roc20'].rank() +
+    0.2 * factor_values['roc60'].rank() +
+    0.3 * factor_values['beta20'].rank() +
+    0.2 * factor_values['rsqr20'].rank()
+)</span>
+
+<span class="formula-comment"># 质量组 — 量价配合</span>
+<span class="formula-code">quality = (
+    0.4 * factor_values['corr20'].rank() +
+    0.3 * factor_values['cord20'].rank() +
+    0.3 * factor_values['wvma20'].rank(ascending=False)
+)</span>
+
+<span class="formula-comment"># 综合因子 (动量 60% + 质量 40%)</span>
+<span class="formula-code">final = 0.6 * momentum + 0.4 * quality</span>
+</div>
+</div>
+
+<div class="factor-card">
+<h3>因子预处理管线</h3>
+<div class="formula">
+<span class="formula-comment"># 推荐在加权前做预处理：</span>
+<span class="formula-code"># 1. 去极值 (Winsorize)</span>
+<span class="formula-code"># 2. 中性化 (行业+市值)</span>
+<span class="formula-code"># 3. 标准化 (Z-Score)</span>
+<span class="formula-code"># 4. Rank 排名 (去量纲)</span>
+</div>
+</div>
+
+<hr style="border-color: var(--border); margin: 40px 0;">
+<p style="text-align: center; color: var(--text-dim); font-size: 0.9em;">
+  基于 Microsoft Qlib Alpha158 翻译 · 聚宽 jqfactor.Factor 兼容 · 159 个因子<br>
+  文件: <code>qlib_alpha158_factors.py</code> · 生成日期: 2025-06-25
+</p>
+
+</body>
+</html>

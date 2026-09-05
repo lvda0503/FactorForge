@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PandaFactor 因子引擎 — 完整参考手册</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9; --text-dim:#8b949e; --accent:#58a6ff; --green:#3fb950; --orange:#d2991d; --red:#f85149; --purple:#a371f7; --cyan:#39c5cf; --pink:#f778ba; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;line-height:1.6;max-width:1300px;margin:0 auto;padding:20px}
+  h1{font-size:2em;margin:20px 0 10px;color:#fff;border-bottom:2px solid var(--border);padding-bottom:10px}
+  h2{font-size:1.5em;margin:40px 0 15px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:1.2em;margin:25px 0 10px;color:var(--green)}
+  h4{font-size:1.05em;margin:20px 0 8px;color:var(--orange)}
+  p,li{margin:6px 0}
+  a{color:var(--accent)}
+
+  nav.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:20px 0}
+  nav.toc h2{margin:0 0 12px;font-size:1.2em;color:#fff;border:none}
+  nav.toc ol{padding-left:20px;columns:2}
+  nav.toc li{margin:4px 0;font-size:.95em}
+
+  .stats{display:flex;gap:15px;flex-wrap:wrap;margin:15px 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 18px;text-align:center;min-width:100px}
+  .stat .num{font-size:1.8em;font-weight:bold;color:var(--accent)}
+  .stat .lbl{font-size:.85em;color:var(--text-dim)}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:15px 0}
+  .card h3{margin-top:0}
+  .meta{font-size:.85em;color:var(--text-dim);margin-bottom:10px}
+  .meta span{margin-right:15px}
+
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.8em;font-weight:bold;margin-right:6px}
+  .b-ops{background:#1f3a2c;color:var(--green)}
+  .b-ind{background:#2a1f1a;color:var(--orange)}
+  .b-core{background:#1a2a3a;color:var(--accent)}
+  .b-adv{background:#2a1a2a;color:var(--purple)}
+  .b-ts{background:#1a2a2a;color:var(--cyan)}
+
+  .formula{background:#0d1117;border-left:3px solid var(--accent);padding:12px 16px;margin:10px 0;font-family:'Consolas','Courier New',monospace;font-size:.95em;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+  .fc{color:var(--green)} .fcm{color:var(--text-dim)}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9em}
+  th{background:#1c2333;color:var(--accent);padding:8px 12px;text-align:left;font-weight:600}
+  td{padding:7px 12px;border-top:1px solid var(--border)}
+  tr:hover{background:#1a1f2b}
+  code{background:#1c2333;color:var(--green);padding:1px 6px;border-radius:3px;font-family:'Consolas',monospace;font-size:.95em}
+
+  .tip{background:#121d2a;border:1px solid #1f4a6b;border-radius:6px;padding:12px 16px;margin:10px 0}
+  .tip::before{content:"💡 要点";display:block;font-weight:bold;color:var(--accent);margin-bottom:6px}
+  .warn{background:#2a1f12;border:1px solid #6b4a1f;border-radius:6px;padding:12px 16px;margin:10px 0}
+  .warn::before{content:"⚠️ 注意";display:block;font-weight:bold;color:var(--orange);margin-bottom:6px}
+
+  .cat-header{background:linear-gradient(135deg,#1c2333,#161b22);border:1px solid var(--border);border-radius:8px;padding:15px 20px;margin:30px 0 15px}
+  .cat-header h2{margin:0 0 5px;border:none}
+  .cat-header p{color:var(--text-dim);margin:0}
+
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:10px 0}
+  .grid-item{background:#1c2333;border:1px solid var(--border);border-radius:6px;padding:12px 15px}
+  .grid-item h4{margin:0 0 6px;font-size:.95em}
+  .grid-item code{font-size:.85em}
+  .grid-item p{font-size:.85em;color:var(--text-dim);margin:4px 0 0}
+
+  hr{border-color:var(--border);margin:25px 0}
+</style>
+</head>
+<body>
+
+<h1>🐼 PandaFactor 因子引擎 — 完整参考手册</h1>
+<p style="color:var(--text-dim)">基于 <code>panda_factor</code> 开源项目 (GitHub 2.7k ⭐)，详细解析因子运算符、技术指标、因子创建方法和分析流程。</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">50+</div><div class="lbl">运算符函数</div></div>
+  <div class="stat"><div class="num">23</div><div class="lbl">内置技术指标</div></div>
+  <div class="stat"><div class="num">2</div><div class="lbl">因子创建方式</div></div>
+  <div class="stat"><div class="num">4</div><div class="lbl">Level 分层</div></div>
+  <div class="stat"><div class="num">7</div><div class="lbl">数据字段</div></div>
+</div>
+
+<!-- ============================================================ -->
+<nav class="toc">
+<h2>📑 目录</h2>
+<ol>
+  <li><a href="#overview">PandaFactor 是什么</a></li>
+  <li><a href="#architecture">架构与因子创建方式</a></li>
+  <li><a href="#level0">运算符 Level 0 — 核心工具函数 (17个)</a></li>
+  <li><a href="#level0b">运算符 Level 0 — 数学/统计函数 (10个)</a></li>
+  <li><a href="#level0c">运算符 Level 0 — 移动平均函数 (7个)</a></li>
+  <li><a href="#level0d">运算符 Level 0 — 时间序列函数 (10个)</a></li>
+  <li><a href="#level1">运算符 Level 1 — 应用函数 (8个)</a></li>
+  <li><a href="#level2a">内置技术指标 — 趋势类 (MACD/TRIX/DMI/DPO/EXPMA/DFMA/MTM/BBI)</a></li>
+  <li><a href="#level2b">内置技术指标 — 摆动类 (KDJ/RSI/WR/BIAS/PSY/CCI/ROC)</a></li>
+  <li><a href="#level2c">内置技术指标 — 通道/量价/能量 (BOLL/TAQ/KTN/ATR/OBV/MFI/EMV/MASS/ASI/BRAR)</a></li>
+  <li><a href="#formula">公式模式创建因子</a></li>
+  <li><a href="#class">类模式创建因子</a></li>
+  <li><a href="#analysis">因子分析引擎</a></li>
+  <li><a href="#security">安全沙箱机制</a></li>
+  <li><a href="#jq">与聚宽因子体系对比</a></li>
+</ol>
+</nav>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="overview">一、PandaFactor 是什么</h2>
+</div>
+
+<div class="card">
+<p>PandaFactor 是一个<strong>因子创建与管理平台</strong>，不是预设因子的仓库。它提供了一套完整的因子引擎：</p>
+<ul>
+  <li>🧱 <strong>50+ 运算符函数</strong>（RANK/TS_RANK/DECAY_LINEAR/STDDEV/CORRELATION...）</li>
+  <li>📊 <strong>23 个内置技术指标</strong>（MACD/KDJ/RSI/BOLL/ATR/CCI/OBV/MFI...）</li>
+  <li>🔧 <strong>两种因子创建方式</strong>：公式表达式（类似 Excel 公式）+ Python 类（灵活自定义）</li>
+  <li>📈 <strong>内置因子分析引擎</strong>：IC分析 / 分组收益 / 换手率 / 夏普比率</li>
+  <li>🤖 <strong>LLM 集成</strong>：支持 DeepSeek 自动生成因子代码</li>
+  <li>🛡️ <strong>安全沙箱</strong>：公式模式有严格的代码安全审查（AST 静态分析）</li>
+</ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="architecture">二、架构与因子创建方式</h2>
+</div>
+
+<div class="card">
+<h3>因子创建流程</h3>
+<div style="background:#0d1117;padding:20px;border-radius:6px;text-align:center;font-family:monospace">
+┌─────────────────────┐<br>
+│  1. 选择创建方式      │<br>
+│  公式模式 or 类模式   │<br>
+└──────┬──────────────┘<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+┌─────────────────────┐<br>
+│  2. 编写因子逻辑      │<br>
+│  运算符 + 数据字段    │<br>
+└──────┬──────────────┘<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+┌─────────────────────┐<br>
+│  3. MacroFactor 引擎  │<br>
+│  AST 安全审查 → 编译  │<br>
+└──────┬──────────────┘<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+┌─────────────────────┐<br>
+│  4. 因子计算 &amp; 入库    │<br>
+│  MongoDB 存储结果     │<br>
+└──────┬──────────────┘<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+┌─────────────────────┐<br>
+│  5. 因子分析          │<br>
+│  IC/IR/分组收益/换手率│<br>
+└─────────────────────┘<br>
+</div>
+</div>
+
+<div class="card">
+<h3>两种因子创建方式对比</h3>
+<table>
+  <tr><th style="width:20%"></th><th style="width:40%">公式模式 (Formula)</th><th style="width:40%">类模式 (Class)</th></tr>
+  <tr>
+    <td><strong>创建方式</strong></td>
+    <td>数学表达式字符串，如 <code>"rank(ts_mean($close, 20))"</code></td>
+    <td>继承 <code>Factor</code> 基类，实现 <code>calculate()</code> 方法</td>
+  </tr>
+  <tr><td><strong>复杂度</strong></td><td>低 — 一行公式即可</td><td>中 — 需要写 Python 代码</td></tr>
+  <tr><td><strong>灵活性</strong></td><td>受限于内置运算符</td><td>无限制 — 可调用任何 Python 库</td></tr>
+  <tr><td><strong>安全性</strong></td><td>AST 沙箱自动审查</td><td>需人工审核</td></tr>
+  <tr><td><strong>适用场景</strong></td><td>快速因子原型、量价因子</td><td>复杂因子、基本面因子、ML因子</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>可用数据字段</h3>
+<table>
+  <tr><th>变量名</th><th>含义</th><th>类型</th></tr>
+  <tr><td><code>$close</code> / <code>$price</code></td><td>收盘价</td><td>日频</td></tr>
+  <tr><td><code>$open</code></td><td>开盘价</td><td>日频</td></tr>
+  <tr><td><code>$high</code></td><td>最高价</td><td>日频</td></tr>
+  <tr><td><code>$low</code></td><td>最低价</td><td>日频</td></tr>
+  <tr><td><code>$volume</code></td><td>成交量</td><td>日频</td></tr>
+  <tr><td><code>$amount</code></td><td>成交额</td><td>日频</td></tr>
+  <tr><td><code>$returns</code></td><td>日收益率</td><td>从收盘价计算</td></tr>
+  <tr><td><code>$turnover</code></td><td>换手率</td><td>日频</td></tr>
+  <tr><td><code>$market_cap</code></td><td>市值</td><td>日频</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level0">三、运算符 Level 0 — 核心工具函数 <span class="badge b-core">17个</span></h2>
+<p>最基础的因子构造算子。</p>
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>RANK(series) → Series</h4>
+<code>截⾯排名，归⼀化到 [-0.5, 0.5]</code>
+<p>同一天横截面内对全部股票排序，最弱的=-0.5，中位=0，最强的=+0.5</p>
+</div>
+
+<div class="grid-item">
+<h4>RETURNS(close, period=1) → Series</h4>
+<code>计算收益率：pct_change(period)</code>
+<p>默认1日收益率。period=5 为5日收益率</p>
+</div>
+
+<div class="grid-item">
+<h4>FUTURE_RETURNS(close, period=1) → Series</h4>
+<code>未来N日收益率：(shift(-N)-close)/close</code>
+<p>用于构建因子的目标标签 (Label)</p>
+</div>
+
+<div class="grid-item">
+<h4>STDDEV(series, window=20) → Series</h4>
+<code>滚动标准差</code>
+<p>每只股票独立计算，min_periods = max(2, window//4)</p>
+</div>
+
+<div class="grid-item">
+<h4>CORRELATION(s1, s2, window=20) → Series</h4>
+<code>两序列的滚动皮尔逊相关系数</code>
+<p>范围 [-1, +1]。min_periods = window//2</p>
+</div>
+
+<div class="grid-item">
+<h4>IF(cond, true_val, false_val) → Series</h4>
+<code>条件选择：np.where(cond, A, B)</code>
+<p>三元运算符的向量化版本。常用于构建条件因子</p>
+</div>
+
+<div class="grid-item">
+<h4>DELAY(series, period=1) → Series</h4>
+<code>滞后值：groupby(symbol).shift(N)</code>
+<p>取N天前的值。DELAY(close,5) = 5天前收盘价</p>
+</div>
+
+<div class="grid-item">
+<h4>SUM(series, window=20) → Series</h4>
+<code>滚动求和：rolling(window).sum()</code>
+<p>过去N天累计和。常用于做条件计数(配合布尔值)</p>
+</div>
+
+<div class="grid-item">
+<h4>TS_ARGMIN(series, window) → Series</h4>
+<code>窗口内最小值的位置索引</code>
+<p>返回一个整数，0=今天，N-1=最早</p>
+</div>
+
+<div class="grid-item">
+<h4>TS_ARGMAX(series, window) → Series</h4>
+<code>窗口内最大值的位置（加权平均）</code>
+<p>归⼀化到 [0,1]：0=最早发⽣，1=最新发⽣</p>
+</div>
+
+<div class="grid-item">
+<h4>TS_RANK(series, window=20) → Series</h4>
+<code>时间序列百分位排名</code>
+<p>当前值在过去N天中的百分位，范围[0,1]</p>
+</div>
+
+<div class="grid-item">
+<h4>DELTA(series, period=1) → Series</h4>
+<code>N期差分：groupby(symbol).diff(N)</code>
+<p>当前值 − N天前的值</p>
+</div>
+
+<div class="grid-item">
+<h4>ADV(volume, window=20) → Series</h4>
+<code>平均日成交量：rolling.mean()</code>
+<p>常用于衡量流动性水平</p>
+</div>
+
+<div class="grid-item">
+<h4>TS_MIN(series, window=20) → Series</h4>
+<code>滚动最小值：rolling(window).min()</code>
+<p>过去N天的最低价（或任何序列的最小值）</p>
+</div>
+
+<div class="grid-item">
+<h4>TS_MAX(series, window=20) → Series</h4>
+<code>滚动最大值：rolling(window).max()</code>
+<p>过去N天的最高价</p>
+</div>
+
+<div class="grid-item">
+<h4>DECAY_LINEAR(series, window=20) → Series</h4>
+<code>线性衰减加权平均</code>
+<p>权重：window, window-1, ..., 2, 1（最新日期权最大）</p>
+</div>
+
+<div class="grid-item">
+<h4>SCALE(series) → Series</h4>
+<code>横截⾯归⼀化到 [-1, 1]</code>
+<p>2*(x-min)/(max-min) - 1，每组日期独立计算</p>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level0b">四、运算符 Level 0 — 数学/统计函数 <span class="badge b-core">10个</span></h2>
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>LOG(series) → Series</h4>
+<code>np.log(x) — 自然对数</code>
+</div>
+
+<div class="grid-item">
+<h4>POWER(series, power) → Series</h4>
+<code>np.power(x, n) — N次幂</code>
+</div>
+
+<div class="grid-item">
+<h4>SIGN(series) → Series</h4>
+<code>np.sign(x) — 符号函数(+1/0/-1)</code>
+</div>
+
+<div class="grid-item">
+<h4>SIGNEDPOWER(series, n) → Series</h4>
+<code>sign(x) * |x|^n — 带符号幂</code>
+</div>
+
+<div class="grid-item">
+<h4>ABS(series) → Series</h4>
+<code>np.abs(x) — 绝对值</code>
+</div>
+
+<div class="grid-item">
+<h4>MIN(s1, s2|scalar) → Series</h4>
+<code>逐元素取最小值</code>
+<p>可用于两序列或序列+标量</p>
+</div>
+
+<div class="grid-item">
+<h4>MAX(s1, s2|scalar) → Series</h4>
+<code>逐元素取最大值</code>
+<p>常用于截断（如 MAX(ret, 0) = 只取正收益）</p>
+</div>
+
+<div class="grid-item">
+<h4>AS_FLOAT(condition) → Series</h4>
+<code>布尔 → 浮点：True→1.0, False→0.0</code>
+<p>用于将条件转换为可运算的数值</p>
+</div>
+
+<div class="grid-item">
+<h4>COVARIANCE(s1, s2, window=20) → Series</h4>
+<code>两序列的滚动协方差</code>
+<p>逐symbol计算，min_periods=window//4</p>
+</div>
+
+<div class="grid-item">
+<h4>VWAP(close, volume) → Series</h4>
+<code>成交量加权均价</code>
+<p>Σ(price×volume)/Σ(volume)，20日滚动窗口</p>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level0c">五、运算符 Level 0 — 移动平均函数 <span class="badge b-core">7个</span></h2>
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>MA(series, N) → Series</h4>
+<code>简单移动平均：rolling(N).mean()</code>
+<p>最常用的均线函数。N=20=月线，N=60=季线</p>
+</div>
+
+<div class="grid-item">
+<h4>EMA(series, N) → Series</h4>
+<code>指数移动平均：ewm(span=N).mean()</code>
+<p>α=2/(N+1)，对近期数据更敏感</p>
+</div>
+
+<div class="grid-item">
+<h4>SMA(series, N, M=1) → Series</h4>
+<code>中式SMA：ewm(α=M/N).mean()</code>
+<p>alpha可自定义。中国软件常用SMA实现</p>
+</div>
+
+<div class="grid-item">
+<h4>DMA(series, A) → Series</h4>
+<code>动态移动平均：ewm(α=A).mean()</code>
+<p>固定平滑因子A，需 0&lt;A&lt;1</p>
+</div>
+
+<div class="grid-item">
+<h4>WMA(series, N) → Series</h4>
+<code>加权移动平均</code>
+<p>权重：1,2,3,...,N（最新权重最大）<br>Yn=Σ(i·Xi)/Σi</p>
+</div>
+
+<div class="grid-item">
+<h4>AVEDEV(series, N) → Series</h4>
+<code>平均绝对偏差：mean(|x-mean(x)|)</code>
+<p>衡量序列相对均值的偏离程度</p>
+</div>
+
+<div class="grid-item">
+<h4>DECAYLINEAR(series, d) → Series</h4>
+<code>线性衰减加权平均（别名）</code>
+<p>与DECAY_LINEAR等价。权重：d,d-1,...,1</p>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level0d">六、运算符 Level 0 — 时间序列函数 <span class="badge b-ops">10个</span></h2>
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>RD(S, D=3) → Series</h4>
+<code>四舍五入到D位小数</code>
+</div>
+
+<div class="grid-item">
+<h4>RET(S, N=1) → Series</h4>
+<code>取序列倒数第N个值广播到全序列</code>
+<p>用于取最新一期数据作为常量</p>
+</div>
+
+<div class="grid-item">
+<h4>REF(S, N=1) → Series</h4>
+<code>向前引用：shift(N)</code>
+<p>REF(close, 1) = 昨天收盘价</p>
+</div>
+
+<div class="grid-item">
+<h4>DIFF(S, N=1) → Series</h4>
+<code>N期差分：diff(N)</code>
+<p>DIFF(close) = close[t] - close[t-1]</p>
+</div>
+
+<div class="grid-item">
+<h4>STD(S, N) → Series</h4>
+<code>N日滚动标准差（ddof=0）</code>
+<p>与STDDEV的区别：ddof不同，无min_periods限制</p>
+</div>
+
+<div class="grid-item">
+<h4>CONST(S) → Series</h4>
+<code>用最后一个值填充全序列</code>
+<p>将动态值转为静态常量</p>
+</div>
+
+<div class="grid-item">
+<h4>HHV(S, N) → Series</h4>
+<code>N日最高值：rolling(N).max()</code>
+</div>
+
+<div class="grid-item">
+<h4>LLV(S, N) → Series</h4>
+<code>N日最低值：rolling(N).min()</code>
+</div>
+
+<div class="grid-item">
+<h4>HHVBARS(S, N) → Series</h4>
+<code>距N日内最高值的天数</code>
+</div>
+
+<div class="grid-item">
+<h4>LLVBARS(S, N) → Series</h4>
+<code>距N日内最低值的天数</code>
+</div>
+
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>SLOPE(S, N) → Series</h4>
+<code>线性回归斜率：np.polyfit(range(N), x, 1)[0]</code>
+<p>衡量趋势的坡度</p>
+</div>
+
+<div class="grid-item">
+<h4>FORCAST(S, N) → Series</h4>
+<code>线性回归预测值：np.polyval()</code>
+<p>用过去N天回归线预测今天应有的值</p>
+</div>
+
+<div class="grid-item">
+<h4>TS_MEAN(series, window=20) → Series</h4>
+<code>时间序列移动平均（逐symbol）</code>
+<p>与MA的区别：明确的多索引处理</p>
+</div>
+
+<div class="grid-item">
+<h4>CAP(close, shares) → Series</h4>
+<code>市值 = close × shares</code>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level1">七、运算符 Level 1 — 应用函数 <span class="badge b-adv">8个</span></h2>
+<p>基于 Level 0 函数构建的高级逻辑函数。主要用于条件判断、计数和交叉检测。</p>
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>COUNT(S, N) → Series</h4>
+<code>过去N天条件S为True的天数</code>
+<p>COUNT(CLOSE>OPEN, 20) = 近20天收阳天数</p>
+</div>
+
+<div class="grid-item">
+<h4>EVERY(S, N) → Series</h4>
+<code>过去N天是否每天S都为True</code>
+<p>EVERY(CLOSE>MA(CLOSE,20), 5) = 连续5天站上20日线</p>
+</div>
+
+<div class="grid-item">
+<h4>EXIST(S, N) → Series</h4>
+<code>过去N天是否存在S为True</code>
+<p>EXIST(VOLUME>ADV(VOLUME,20)*2, 10) = 近10天有无异常放量</p>
+</div>
+
+<div class="grid-item">
+<h4>FILTER(S, N) → Series</h4>
+<code>S为True后，接下来N天强制为False</code>
+<p>用于去重：信号触发后N天内不再出信号</p>
+</div>
+
+<div class="grid-item">
+<h4>SUMIF(S1, S2, N) → Series</h4>
+<code>条件求和</code>
+<p>S2为True时才累加S1。常用于选择性累计</p>
+</div>
+
+<div class="grid-item">
+<h4>BARSLAST(S) → Series</h4>
+<code>距上一次S为True过去多少天</code>
+<p>BARSLAST(CROSS(MA5, MA20)) = 距上次金叉天数</p>
+</div>
+
+<div class="grid-item">
+<h4>BARSLASTCOUNT(S) → Series</h4>
+<code>S连续为True的天数</code>
+<p>BARSLASTCOUNT(CLOSE>OPEN) = 连阳天数</p>
+</div>
+
+<div class="grid-item">
+<h4>BARSSINCEN(S, N) → Series</h4>
+<code>距N天内首次S为True的天数</code>
+</div>
+
+</div>
+
+<div class="grid2">
+
+<div class="grid-item">
+<h4>CROSS(S1, S2) → Series</h4>
+<code>金叉/死叉检测</code>
+<p>S1上穿S2：(S1>S2)&(S1.shift(1)≤S2.shift(1))</p>
+</div>
+
+<div class="grid-item">
+<h4>LONGCROSS(S1, S2, N) → Series</h4>
+<code>维持N天后上穿</code>
+<p>S1在连续N天&lt;S2后，今天首次&gt;S2</p>
+</div>
+
+<div class="grid-item">
+<h4>VALUEWHEN(S, X) → Series</h4>
+<code>条件回溯取值</code>
+<p>S为True时取X的当前值，其余为NaN</p>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level2a">八、内置技术指标 — 趋势类 <span class="badge b-ind">8个</span></h2>
+<p>所有技术指标均基于 Level 0 和 Level 1 运算符构建，可直接调用。</p>
+</div>
+
+<div class="card">
+<h3>MACD — 指数平滑异同移动平均线</h3>
+<div class="meta"><span>📞 MACD(CLOSE, SHORT=12, LONG=26, M=9)</span><span>→ (DIF, DEA, MACD_hist)</span></div>
+<div class="formula">
+<span class="fc">DIF  = EMA(CLOSE, 12) − EMA(CLOSE, 26)</span>
+<span class="fc">DEA  = EMA(DIF, 9)</span>
+<span class="fc">MACD = (DIF − DEA) × 2</span>
+</div>
+<p>DIF上穿DEA=金叉（买入），下穿=死叉（卖出）。MACD柱翻红=动能转多。</p>
+</div>
+
+<div class="card">
+<h3>TRIX — 三重指数平滑平均线</h3>
+<div class="meta"><span>📞 TRIX(CLOSE, M1=12, M2=20) → Series</span></div>
+<div class="formula">
+<span class="fc">TR   = EMA(EMA(EMA(CLOSE, 12), 12), 12)</span>
+<span class="fc">TRIX = (TR − REF(TR,1)) / REF(TR,1) × 100</span>
+</div>
+<p>三重平滑去除短期噪音。TRIX上穿TRMA(20日EMA)=买点。</p>
+</div>
+
+<div class="card">
+<h3>DMI — 趋向指标</h3>
+<div class="meta"><span>📞 DMI(CLOSE, HIGH, LOW, M1=14, M2=6) → ADX</span></div>
+<div class="formula">
+<span class="fc">TR  = SUM(MAX(MAX(H−L,|H−REF(C,1)|),|L−REF(C,1)|), 14)</span>
+<span class="fc">PDI = DMP×100/TR,  MDI = DMM×100/TR</span>
+<span class="fc">ADX = MA(|MDI−PDI|/(PDI+MDI)×100, 6)</span>
+</div>
+<p>ADX>25=趋势明确，PDI>MDI=多头占优。ADX走高=趋势加强。</p>
+</div>
+
+<div class="card">
+<h3>DPO — 区间震荡线</h3>
+<div class="meta"><span>📞 DPO(CLOSE, M1=20, M2=10, M3=6) → Series</span></div>
+<div class="formula"><span class="fc">DPO = CLOSE − REF(MA(CLOSE, 20), 10)</span></div>
+<p>去除长期趋势，只保留短期周期波动。正值=短期超买，负值=短期超卖。</p>
+</div>
+
+<div class="card">
+<h3>EXPMA — 指数平均线</h3>
+<div class="meta"><span>📞 EXPMA(CLOSE, N1=12, N2=50) → Series (短)</span></div>
+<div class="formula"><span class="fc">EXPMA_short = EMA(CLOSE, 12)</span></div>
+<p>短均线上穿长均线=多头；下穿=空头。</p>
+</div>
+
+<div class="card">
+<h3>DFMA — 双均线差值</h3>
+<div class="meta"><span>📞 DFMA(CLOSE, N1=10, N2=50, M=10) → Series</span></div>
+<div class="formula"><span class="fc">DIF = MA(CLOSE, 10) − MA(CLOSE, 50)</span></div>
+<p>正值=短期均线在上(多头)，负值=空头。值的大小代表趋势强度。</p>
+</div>
+
+<div class="card">
+<h3>MTM — 动量线</h3>
+<div class="meta"><span>📞 MTM(CLOSE, N=12, M=6) → Series</span></div>
+<div class="formula"><span class="fc">MTM = CLOSE − REF(CLOSE, 12)</span></div>
+<p>正值=上涨动量，负值=下跌动量。MTM上穿MTMMA(6日均值)=转强。</p>
+</div>
+
+<div class="card">
+<h3>BBI — 多空指数</h3>
+<div class="meta"><span>📞 BBI(CLOSE, M1=3, M2=6, M3=12, M4=20) → Series</span></div>
+<div class="formula"><span class="fc">BBI = (MA(CLOSE,3) + MA(CLOSE,6) + MA(CLOSE,12) + MA(CLOSE,20)) / 4</span></div>
+<p>四条均线的均值。价格站上BBI=多头市场；跌破BBI=空头市场。</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level2b">九、内置技术指标 — 摆动类 <span class="badge b-ind">7个</span></h2>
+</div>
+
+<div class="card">
+<h3>KDJ — 随机指标</h3>
+<div class="meta"><span>📞 KDJ(CLOSE, HIGH, LOW, N=9, M1=3, M2=3) → K线</span></div>
+<div class="formula">
+<span class="fc">RSV = (CLOSE − LLV(LOW, 9)) / (HHV(HIGH, 9) − LLV(LOW, 9)) × 100</span>
+<span class="fc">K   = EMA(RSV, 3)</span>
+</div>
+<p>K>80=超买区，K<20=超卖区。K上穿D=金叉。</p>
+</div>
+
+<div class="card">
+<h3>RSI — 相对强弱指标</h3>
+<div class="meta"><span>📞 RSI(CLOSE, N=24) → Series [0~100]</span></div>
+<div class="formula">
+<span class="fc">DIF = CLOSE − REF(CLOSE, 1)</span>
+<span class="fc">RSI = SMA(MAX(DIF,0), 24) / SMA(ABS(DIF), 24) × 100</span>
+</div>
+<p>>70=超买，<30=超卖。注意：PandaFactor 的RSI默认周期24（通达信风格），不同于常见的14。</p>
+</div>
+
+<div class="card">
+<h3>WR — 威廉指标</h3>
+<div class="meta"><span>📞 WR(CLOSE, HIGH, LOW, N=10, N1=6) → Series [0~100]</span></div>
+<div class="formula"><span class="fc">WR = (HHV(HIGH,10) − CLOSE) / (HHV(HIGH,10) − LLV(LOW,10)) × 100</span></div>
+<p>WR>80=超卖（接近N日低点），WR<20=超买（接近N日高点）。与RSI方向相反。</p>
+</div>
+
+<div class="card">
+<h3>BIAS — 乖离率</h3>
+<div class="meta"><span>📞 BIAS(CLOSE, L1=6, L2=12, L3=24) → Series (L1)</span></div>
+<div class="formula"><span class="fc">BIAS = (CLOSE − MA(CLOSE, 6)) / MA(CLOSE, 6) × 100</span></div>
+<p>正乖离(>5%)=股价远高于均线可能回调；负乖离(<−5%)=可能反弹。</p>
+</div>
+
+<div class="card">
+<h3>PSY — 心理线</h3>
+<div class="meta"><span>📞 PSY(CLOSE, N=12, M=6) → Series [0~100]</span></div>
+<div class="formula"><span class="fc">PSY = COUNT(CLOSE>REF(CLOSE,1), 12) / 12 × 100</span></div>
+<p>>75=市场过度乐观（可能回调）；<25=过度悲观（可能反弹）。</p>
+</div>
+
+<div class="card">
+<h3>CCI — 商品通道指数</h3>
+<div class="meta"><span>📞 CCI(CLOSE, HIGH, LOW, N=14) → Series</span></div>
+<div class="formula">
+<span class="fc">TP  = (HIGH + LOW + CLOSE) / 3</span>
+<span class="fc">CCI = (TP − MA(TP, 14)) / (0.015 × AVEDEV(TP, 14))</span>
+</div>
+<p>CCI>+100=超买异常；CCI<−100=超卖异常。突破±200为极端信号。</p>
+</div>
+
+<div class="card">
+<h3>ROC — 变动率</h3>
+<div class="meta"><span>📞 ROC(CLOSE, N=12) → Series</span></div>
+<div class="formula"><span class="fc">ROC = (CLOSE − REF(CLOSE, 12)) / REF(CLOSE, 12) × 100</span></div>
+<p>正值=N日上涨，负值=下跌。注意：PandaFactor的实现使用百分比，Qlib的ROC是比值。</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="level2c">十、内置技术指标 — 通道/量价/能量类 <span class="badge b-ind">10个</span></h2>
+</div>
+
+<div class="card">
+<h3>BOLL — 布林带</h3>
+<div class="meta"><span>📞 BOLL(CLOSE, N=20, P=2) → MID</span></div>
+<div class="formula">
+<span class="fc">MID   = MA(CLOSE, 20)</span>
+<span class="fc">UPPER = MID + 2×STD(CLOSE, 20)</span>
+<span class="fc">LOWER = MID − 2×STD(CLOSE, 20)</span>
+</div>
+<p>价格触及上轨=超买，触及下轨=超卖。带宽收窄=即将变盘。</p>
+</div>
+
+<div class="card">
+<h3>TAQ — 唐奇安通道</h3>
+<div class="meta"><span>📞 TAQ(HIGH, LOW, N) → UP</span></div>
+<div class="formula"><span class="fc">UP = HHV(HIGH, N)</span></div>
+<p>返回N日最高价。完整通道：上轨=HHV(HIGH,N)，下轨=LLV(LOW,N)，中轨=(上+下)/2。</p>
+</div>
+
+<div class="card">
+<h3>KTN — 肯特纳通道</h3>
+<div class="meta"><span>📞 KTN(CLOSE, HIGH, LOW, N=20, M=10) → MID</span></div>
+<div class="formula"><span class="fc">MID = EMA((HIGH+LOW+CLOSE)/3, 20)</span></div>
+<p>典型价格的三重EMA。完整：MID±M×ATR。</p>
+</div>
+
+<div class="card">
+<h3>ATR — 平均真实波幅</h3>
+<div class="meta"><span>📞 ATR(CLOSE, HIGH, LOW, N=20) → Series</span></div>
+<div class="formula">
+<span class="fc">TR  = MAX(MAX(H−L, |REF(C,1)−H|), |REF(C,1)−L|)</span>
+<span class="fc">ATR = MA(TR, 20)</span>
+</div>
+<p>衡量波动性，不含方向信息。ATR增大=波动加剧。常用于止损：止损价=入场价−2×ATR。</p>
+</div>
+
+<div class="card">
+<h3>OBV — 能量潮</h3>
+<div class="meta"><span>📞 OBV(CLOSE, VOL) → Series</span></div>
+<div class="formula">
+<span class="fc">signed_vol = +VOL (if CLOSE>REF(CLOSE,1))</span>
+<span class="fc">           = −VOL (if CLOSE<REF(CLOSE,1))</span>
+<span class="fc">           = 0    (if CLOSE=REF(CLOSE,1))</span>
+<span class="fc">OBV = cumsum(signed_vol) / 10000</span>
+</div>
+<p>量在价先。OBV创新高→价格有望跟随新高；OBV与价格背离→趋势反转信号。</p>
+</div>
+
+<div class="card">
+<h3>MFI — 资金流量指标</h3>
+<div class="meta"><span>📞 MFI(CLOSE, HIGH, LOW, VOL, N=14) → Series [0~100]</span></div>
+<div class="formula">
+<span class="fc">TYP = (HIGH + LOW + CLOSE) / 3</span>
+<span class="fc">MF = TYP × VOL</span>
+<span class="fc">MR = SUM(MF_pos, 14) / SUM(MF_neg, 14)</span>
+<span class="fc">MFI = 100 − 100/(1+MR)</span>
+</div>
+<p>成交量加权的RSI。>80=超买放量（警惕），<20=超卖缩量（机会）。与价格背离→重要反转信号。</p>
+</div>
+
+<div class="card">
+<h3>EMV — 简易波动指标</h3>
+<div class="meta"><span>📞 EMV(HIGH, LOW, VOL, N=14, M=9) → Series</span></div>
+<div class="formula">
+<span class="fc">MID = 100 × (H+L−REF(H+L,1)) / (H+L)</span>
+<span class="fc">EMV = MA(MID × (MA(VOL,N)/VOL) × (H−L) / MA(H−L,N), N)</span>
+</div>
+<p>衡量上涨/下跌所需的成交量。正值且上升=少量成交推动上涨(好)；负值=放量下跌。</p>
+</div>
+
+<div class="card">
+<h3>MASS — 梅斯线</h3>
+<div class="meta"><span>📞 MASS(HIGH, LOW, N1=9, N2=25, M=6) → Series</span></div>
+<div class="formula">
+<span class="fc">MASS = SUM(MA(H−L,9) / MA(MA(H−L,9), 9), 25)</span>
+</div>
+<p>衡量高低价差的变化趋势。MASS>27后回落=趋势可能反转。用于捕捉转折点。</p>
+</div>
+
+<div class="card">
+<h3>ASI — 振动升降指标</h3>
+<div class="meta"><span>📞 ASI(OPEN, CLOSE, HIGH, LOW, M1=26, M2=10) → Series</span></div>
+<div class="formula"><span class="fc">复杂的价格位移综合指标，包含对开盘/收盘/最高/最低的多层比较和加权。</span></div>
+<p>ASI突破前高/前低=趋势确认信号。与价格背离=反转信号。</p>
+</div>
+
+<div class="card">
+<h3>BRAR — 情绪指标</h3>
+<div class="meta"><span>📞 BRAR(OPEN, CLOSE, HIGH, LOW, M1=26) → AR</span></div>
+<div class="formula"><span class="fc">AR = SUM(HIGH−OPEN, 26) / SUM(OPEN−LOW, 26) × 100</span></div>
+<p>AR>120=多头强势（行情向好），AR<60=空头强势（行情低迷）。</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="formula">十一、公式模式创建因子</h2>
+</div>
+
+<div class="card">
+<h3>公式语法</h3>
+<p>通过在字符串中使用 <code>$字段名</code> 引用数据，用内置运算符函数组合计算。</p>
+<div class="formula">
+<span class="fcm"># 基础动量因子</span>
+<span class="fc">ts_rank(returns($close), 20)</span>
+
+<span class="fcm"># 波动率因子</span>
+<span class="fc">stddev(returns($close), 20)</span>
+
+<span class="fcm"># 量价相关性因子</span>
+<span class="fc">correlation($close, log($volume+1), 20)</span>
+
+<span class="fcm"># RSI类因子（用条件+滚动求和）</span>
+<span class="fc">sum(if($close>delay($close,1), $close-delay($close,1), 0), 14)</span>
+<span class="fc">/ sum(abs($close-delay($close,1)), 14)</span>
+
+<span class="fcm"># 复合因子：动量 + 低波动</span>
+<span class="fc">rank(returns($close, 20))</span>
+<span class="fc">+ rank(-stddev(returns($close), 20))</span>
+
+<span class="fcm"># 复杂Alpha因子</span>
+<span class="fc">correlation(rank(delta(log($volume), 1)),</span>
+<span class="fc">            rank((($close-$open)/$open)), 6)</span>
+</div>
+<div class="tip">公式中的 <code>$</code> 前缀表示按日期对齐的数据字段。运算符无 <code>$</code> 前缀。<br>公式会先经过 AST 安全审查，确保不包含恶意代码。</div>
+</div>
+
+<div class="card">
+<h3>完整表达式示例：实现一个Alpha因子</h3>
+<div class="formula">
+<span class="fcm"># Alpha 001: 量价偏离因子</span>
+<span class="fc">-1 * correlation(</span>
+<span class="fc">    rank(delta(log($volume), 1)),</span>
+<span class="fc">    rank((($close - $open) / $open)),</span>
+<span class="fc">    6</span>
+<span class="fc">)</span>
+</div>
+<p>逻辑：成交量变化的排名 与 日内涨跌幅的排名 之间的负相关性。更强的负相关=量价配合不佳。</p>
+</div>
+
+<div class="card">
+<h3>运算符速查 (公式模式可用)</h3>
+<table>
+  <tr><th>类别</th><th>运算符</th></tr>
+  <tr><td>基本数学</td><td><code>abs round min max sum len sin cos tan log exp sqrt</code></td></tr>
+  <tr><td>横截面</td><td><code>RANK SCALE</code></td></tr>
+  <tr><td>时间序列</td><td><code>RETURNS STDDEV DELAY SUM DELTA TS_RANK TS_MIN TS_MAX TS_ARGMAX TS_ARGMIN TS_MEAN</code></td></tr>
+  <tr><td>滚动统计</td><td><code>CORRELATION COVARIANCE</code></td></tr>
+  <tr><td>条件逻辑</td><td><code>IF MIN MAX</code></td></tr>
+  <tr><td>数学变换</td><td><code>LOG POWER SIGN SIGNEDPOWER ABS AS_FLOAT</code></td></tr>
+  <tr><td>移动平均</td><td><code>MA EMA SMA DMA WMA DECAY_LINEAR</code></td></tr>
+  <tr><td>高级逻辑</td><td><code>COUNT EVERY EXIST FILTER SUMIF BARSLAST CROSS LONGCROSS VALUEWHEN</code></td></tr>
+  <tr><td>技术指标</td><td><code>MACD KDJ RSI BOLL CCI ATR DMI BBI TAQ KTN TRIX VR EMV DPO BRAR MTM MASS ROC EXPMA OBV MFI ASI PSY BIAS WR</code></td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="class">十二、类模式创建因子</h2>
+</div>
+
+<div class="card">
+<h3>Factor 基类</h3>
+<p>类模式使用 Python 代码，继承 <code>Factor</code> 基类并实现 <code>calculate(factors)</code> 方法。</p>
+
+<div class="formula">
+<span class="fcm"># 方式1：继承 Factor 基类 (PandaFactor 原生)</span>
+<span class="fc">from panda_factor.generate.factor_base import Factor</span>
+<span class="fc">import pandas as pd</span>
+
+<span class="fc">class MomentumFactor(Factor):</span>
+<span class="fc">    """动量因子：20日收益率"""</span>
+
+<span class="fc">    def calculate(self, factors):</span>
+<span class="fc">        close = factors['close']</span>
+<span class="fc">        # 可用 self.XXX 调用所有 FactorUtils 方法</span>
+<span class="fc">        returns = self.RETURNS(close)</span>
+<span class="fc">        momentum = self.SUM(returns, 20)</span>
+<span class="fc">        return self.RANK(momentum)</span>
+</div>
+
+<div class="formula">
+<span class="fcm"># 方式2：转换到聚宽平台使用</span>
+<span class="fc">from jqfactor import Factor</span>
+
+<span class="fc">class MOMENTUM_20(Factor):</span>
+<span class="fc">    name = 'momentum_20'</span>
+<span class="fc">    max_window = 20</span>
+<span class="fc">    dependencies = ['close']</span>
+
+<span class="fc">    def calc(self, data):</span>
+<span class="fc">        close = data['close']</span>
+<span class="fc">        return close.iloc[-1] / close.iloc[0] - 1</span>
+</div>
+
+<div class="tip">
+  PandaFactor 的 Factor 类与聚宽的 Factor 类<strong>名称相同但接口不同</strong>：<br>
+  • PandaFactor: <code>calculate(self, factors: dict)</code>，factors是MultiIndex DataFrame<br>
+  • 聚宽: <code>calc(self, data: dict)</code>，data是日期索引的DataFrame dict<br>
+  虽然接口不同，但因子逻辑可以直接移植。
+</div>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="analysis">十三、因子分析引擎</h2>
+</div>
+
+<div class="card">
+<p>PandaFactor 内置了完整的因子分析 pipeline，对标 <code>alphalens</code>：</p>
+
+<table>
+  <tr><th>分析维度</th><th>指标</th><th>说明</th></tr>
+  <tr><td><strong>IC 分析</strong></td><td>IC_mean, Rank_IC, IC_std, IC_IR, t_stat, p_value</td><td>IC均值>0.03有效，IC_IR>0.3优秀</td></tr>
+  <tr><td><strong>分组收益</strong></td><td>各分组的年化收益、最大回撤、夏普比率</td><td>收益单调性越好因子越有效</td></tr>
+  <tr><td><strong>换手率</strong></td><td>各分组的平均换手率</td><td>换手率越低交易成本越小</td></tr>
+  <tr><td><strong>信息比率</strong></td><td>超额收益/跟踪误差</td><td>衡量因子的风险调整后超额收益</td></tr>
+  <tr><td><strong>胜率</strong></td><td>多空组合的月胜率</td><td>稳定性指标</td></tr>
+</table>
+
+<div class="formula">
+<span class="fcm"># PandaFactor 因子分析调用方式</span>
+<span class="fc">from panda_factor.analysis.factor_analysis import factor_analysis</span>
+<span class="fc">from panda_factor.analysis.factor_ic_workflow import FactorICWorkflow</span>
+
+<span class="fcm"># 1. 创建因子</span>
+<span class="fc">factor = macro_factor.create_factor_from_formula(</span>
+<span class="fc">    "rank(returns($close, 20))",</span>
+<span class="fc">    stocks, start_date, end_date</span>
+<span class="fc">)</span>
+
+<span class="fcm"># 2. 运行IC分析</span>
+<span class="fc">ic_result = FactorICWorkflow.run(factor, factor_name="momentum_20")</span>
+<span class="fc">print(f"IC Mean: {ic_result['ic_mean']:.4f}")</span>
+<span class="fc">print(f"IC IR: {ic_result['ic_ir']:.3f}")</span>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="security">十四、安全沙箱机制</h2>
+</div>
+
+<div class="card">
+<p>公式模式的因子代码会经过严格的安全审查：</p>
+<ul>
+  <li>🔒 <strong>AST 静态分析</strong>：解析代码的抽象语法树，只允许白名单中的函数和属性</li>
+  <li>🚫 <strong>禁止模块</strong>：os, subprocess, sys, eval, exec, __import__, open, pickle 等</li>
+  <li>✅ <strong>白名单</strong>：只允许 numpy, pandas, math, datetime, talib, scipy 等</li>
+  <li>📏 <strong>公式长度限制</strong>：防止代码注入</li>
+</ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header">
+<h2 id="jq">十五、与聚宽因子体系对比</h2>
+</div>
+
+<div class="card">
+<table>
+  <tr><th style="width:25%">维度</th><th style="width:37%">PandaFactor</th><th style="width:37%">聚宽 JoinQuant</th></tr>
+  <tr><td><strong>定位</strong></td><td>本地因子创建与管理平台</td><td>云端量化交易平台</td></tr>
+  <tr><td><strong>因子创建</strong></td><td>公式表达式 + Python 类</td><td>Python Factor 基类</td></tr>
+  <tr><td><strong>运算符数量</strong></td><td>50+ 运算符 + 23 技术指标</td><td>jqlib.alpha191 (191个) + 自定义</td></tr>
+  <tr><td><strong>数据来源</strong></td><td>RQData/Tushare/XTQuant/MongoDB</td><td>聚宽内置数据库</td></tr>
+  <tr><td><strong>因子分析</strong></td><td>内置回测引擎（IC/分组/换手率）</td><td>单因子分析 + jqfactor_analyzer</td></tr>
+  <tr><td><strong>LLM 集成</strong></td><td>✅ DeepSeek 自动生成因子</td><td>❌</td></tr>
+  <tr><td><strong>安全机制</strong></td><td>AST 沙箱</td><td>平台级沙箱</td></tr>
+  <tr><td><strong>部署方式</strong></td><td>FastAPI 服务 + MongoDB</td><td>云端 Web 界面</td></tr>
+  <tr><td><strong>适合场景</strong></td><td>本地量化研究、因子挖掘</td><td>A股策略开发与回测</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>关键差异：运算符体系对比</h3>
+<table>
+  <tr><th>PandaFactor 运算符</th><th>聚宽等价实现</th><th>Qlib 等价</th></tr>
+  <tr><td><code>RANK(series)</code> → [-0.5, 0.5]</td><td><code>series.rank(pct=True) − 0.5</code></td><td><code>Rank($close, 20)</code></td></tr>
+  <tr><td><code>TS_RANK(series, 20)</code> → [0,1]</td><td><code>rolling.apply(lambda x: x.rank(pct=True).iloc[-1])</code></td><td><code>Rank($close, 20)</code></td></tr>
+  <tr><td><code>DECAY_LINEAR(series, 20)</code></td><td><code>rolling.apply(lambda x: np.average(x, weights=linspace(1,0,20)))</code></td><td><code>DecayLinear($close, 20)</code></td></tr>
+  <tr><td><code>CORRELATION(s1, s2, 20)</code></td><td><code>s1.rolling(20).corr(s2)</code></td><td><code>Corr($close, Log($volume+1), 20)</code></td></tr>
+  <tr><td><code>CROSS(S1, S2)</code></td><td><code>(S1>S2) & (S1.shift(1)<=S2.shift(1))</code></td><td>无直接等价</td></tr>
+  <tr><td><code>BARSLAST(S)</code></td><td><code>自定义序列追踪</code></td><td>无直接等价</td></tr>
+</table>
+</div>
+
+<hr style="border-color:var(--border);margin:40px 0">
+<p style="text-align:center;color:var(--text-dim);font-size:.9em">
+  基于 PandaFactor 开源项目 (GitHub: PandaAI-Tech/panda_factor, 2.7k ⭐) · 文件: <code>panda_factor_reference.html</code> · 生成日期: 2025-06-25
+</p>
+
+</body>
+</html>

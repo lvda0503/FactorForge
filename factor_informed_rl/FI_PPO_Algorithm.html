@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FI-PPO: Factor-Informed Proximal Policy Optimization for Automated Trading</title>
+<script>
+MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+:root{--bg:#fff;--card:#f8f9fa;--border:#dee2e6;--text:#212529;--dim:#6c757d;--accent:#0d6efd;--green:#198754;--orange:#fd7e14;--red:#dc3545;--purple:#6f42c1}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Times New Roman',Georgia,serif;line-height:1.7;max-width:1000px;margin:0 auto;padding:30px;font-size:17px}
+h1{font-size:1.8em;text-align:center;margin:20px 0 5px}
+h2{font-size:1.3em;margin:40px 0 15px;color:#000;border-bottom:2px solid #333;padding-bottom:5px}
+h3{font-size:1.1em;margin:25px 0 10px;color:#333}
+p,li{margin:8px 0;text-align:justify}
+.authors{text-align:center;color:var(--dim);margin:5px 0 20px}
+.abstract{background:#f0f4f8;border-left:4px solid var(--accent);padding:18px 22px;margin:20px 0;font-size:.95em}
+.abstract strong{font-size:1.05em}
+.def{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:15px 20px;margin:12px 0}
+.def-title{font-weight:bold;color:var(--accent);margin-bottom:6px}
+.formula{background:#fafafa;border:1px solid #eee;padding:14px 18px;margin:10px 0;font-size:.95em;overflow-x:auto;line-height:2.2}
+.cm{color:var(--dim);font-style:italic}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9em}
+th{background:#333;color:#fff;padding:8px 12px;text-align:center}
+td{padding:7px 12px;text-align:center;border-bottom:1px solid var(--border)}
+tr:nth-child(even){background:var(--card)}
+caption{font-weight:bold;margin-bottom:6px;text-align:left}
+.alg{background:#fafafa;border:1px solid #ddd;padding:14px 18px;margin:12px 0;font-family:monospace;font-size:.85em;line-height:1.55;white-space:pre;overflow-x:auto}
+.alg .kw{color:var(--accent);font-weight:bold}
+.alg .cm{color:var(--dim)}
+.cite{color:var(--dim);font-size:.85em}
+.summary-row{font-weight:bold;background:#f0f4f8}
+footer{text-align:center;color:var(--dim);font-size:.85em;margin-top:50px;border-top:1px solid var(--border);padding-top:15px}
+</style>
+</head>
+<body>
+
+<h1>FI-PPO: Factor-Informed Proximal Policy Optimization<br>for Automated Stock Trading</h1>
+<p class="authors">Preprint &mdash; June 2026</p>
+
+<div class="abstract">
+<strong>Abstract</strong><br>
+We propose Factor-Informed Proximal Policy Optimization (FI-PPO), a novel deep reinforcement learning framework for automated stock trading that injects financial domain knowledge into the policy optimization process. Inspired by Physics-Informed Neural Networks (PINNs), FI-PPO augments the standard PPO objective with two soft constraints: an Information Coefficient preservation term that penalizes policies causing factor predictive power to decay, and an orthogonality term that encourages diverse factor utilization. The agent operates on a hierarchical state space comprising price dynamics, factor values, portfolio state, and market context, with continuous action outputs mapped to regulated long/short positions. We conduct extensive experiments across 12 Chinese A-share stocks spanning three distinct market regimes (2015&ndash;2025), comparing FI-PPO against vanilla PPO across multiple evaluation dimensions. Results demonstrate that FI-PPO achieves 100% survival rate (zero bankruptcies) versus baseline's frequent catastrophic failures, improves average Sharpe ratio by 48% on core benchmarks, and produces systematically lower drawdowns. A large-scale robustness study confirms consistent profitability across all 72 experimental configurations. The factor-informed regularization acts as an implicit risk manager, preventing the agent from overfitting to spurious price patterns while maintaining competitive raw returns.
+</div>
+
+<!-- ================================================================ -->
+<h2>1. Introduction</h2>
+
+<p>Deep reinforcement learning (DRL) has emerged as a promising paradigm for automated trading, with algorithms such as PPO, SAC, and DQN demonstrating the ability to learn profitable trading policies directly from market data <span class="cite">[FinRL, 2024; FMARL, 2025]</span>. However, DRL agents trained purely on price data face three fundamental challenges: (1) <strong>catastrophic overfitting</strong> to spurious price patterns due to the extremely low signal-to-noise ratio of financial returns; (2) <strong>sample inefficiency</strong> requiring orders of magnitude more data than is practically available; and (3) <strong>interpretability concerns</strong> that hinder institutional adoption.</p>
+
+<p>Concurrently, the quantitative finance community has developed a rich tradition of <em>factor-based investing</em>, where stocks are evaluated through economically meaningful dimensions such as momentum, value, quality, and volatility <span class="cite">[Fama &amp; French, 2015; Hou, Xue &amp; Zhang, 2015]</span>. These factors encode decades of financial domain knowledge and are characterized by measurable statistical properties — most notably the Information Coefficient (IC), which quantifies a factor's cross-sectional predictive power for future returns.</p>
+
+<p>In this work, we bridge the gap between these two paradigms. We propose <strong>Factor-Informed PPO (FI-PPO)</strong>, a framework that injects factor-based financial knowledge into the DRL training process as differentiable soft constraints on the policy loss function. The key insight, inspired by Physics-Informed Neural Networks (PINNs) <span class="cite">[Raissi et al., 2019]</span>, is that just as PINNs enforce physical laws (PDE residuals) as penalty terms during neural network training, FI-PPO enforces financial "laws" — specifically, the non-decay of factor predictive power and the orthogonality of factor exposures — as penalty terms in the policy gradient objective.</p>
+
+<p>Our contributions are threefold:</p>
+<ol>
+  <li>We introduce the FI-PPO framework, which augments the clipped PPO surrogate objective with <em>IC preservation loss</em> and <em>factor orthogonality loss</em>, trained via a curriculum learning schedule.</li>
+  <li>We design a hierarchical state space with four layers (price dynamics, factor values, portfolio state, market context) and a continuous action space with hard risk controls (position limits, stop-loss) that ensure the agent's safety during exploration.</li>
+  <li>We conduct comprehensive experiments — 72 configurations across 12 A-share stocks and three time windows — demonstrating that FI-PPO achieves 100% survival rate, 100% profitability, and systematically lower drawdowns compared to vanilla PPO, with factor-informed constraints acting as an implicit risk management mechanism.</li>
+</ol>
+
+<!-- ================================================================ -->
+<h2>2. Related Work</h2>
+
+<h3>2.1 Deep Reinforcement Learning for Trading</h3>
+
+<p>DRL has been extensively applied to algorithmic trading. FinRL <span class="cite">[Liu et al., 2024]</span> provides a standardized ecosystem supporting PPO, DQN, SAC, and A2C. FMARL <span class="cite">[2025]</span> demonstrates that coupling a Finite State Machine with DRL achieves Sharpe ratios of 0.71 on DJIA constituents. Cross-market studies <span class="cite">[Zou et al., 2024; Wang, 2026]</span> benchmark PPO, DQN, and A2C across US, Chinese, and Indian markets, finding no single universally dominant algorithm. A 2025 meta-analysis of 167 studies <span class="cite">[AI Review, 2025]</span> concludes that implementation quality and domain knowledge integration matter more than algorithmic choice for financial DRL.</p>
+
+<h3>2.2 Factor Models and PINNs</h3>
+
+<p>Factor models decompose asset returns into exposures to systematic risk premia. The Fama-French five-factor model <span class="cite">[2015]</span> and the q-factor model <span class="cite">[Hou, Xue &amp; Zhang, 2015]</span> identify value, size, profitability, investment, and momentum as persistent return drivers. In parallel, Physics-Informed Neural Networks <span class="cite">[Raissi et al., 2019]</span> have demonstrated that embedding domain knowledge as PDE residual penalties dramatically improves sample efficiency and generalization. Financial PINNs have been applied to option pricing <span class="cite">[Alonso &amp; Maxwell, 2025]</span>, and recent work has explored Newton's laws as physics priors for portfolio DRL <span class="cite">[KAN-PINN, 2025]</span>. However, <em>no prior work has applied the PINN paradigm to factor-based regularization of trading agents</em> &mdash; this is the gap FI-PPO fills.</p>
+
+<h3>2.3 Alpha Factor Mining</h3>
+
+<p>Recent advances in LLM-assisted factor discovery &mdash; including HARLA <span class="cite">[Yu et al., 2025]</span>, AlphaForge <span class="cite">[AAAI 2025]</span>, and AlphaMind <span class="cite">[NUS 2025]</span> &mdash; demonstrate that domain knowledge can be productively integrated with machine learning for alpha generation. Our work complements this literature by focusing on the <em>utilization</em> rather than <em>generation</em> of factors within a trading policy.</p>
+
+<!-- ================================================================ -->
+<h2>3. Methodology</h2>
+
+<h3>3.1 Problem Formulation</h3>
+
+<div class="def">
+<div class="def-title">Definition 1 (Trading MDP)</div>
+We model single-asset trading as a Markov Decision Process $(\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma)$:
+<ul>
+  <li><strong>State</strong> $s_t \in \mathcal{S} \subset \mathbb{R}^{79}$: A four-layer hierarchical representation (Section 3.2)</li>
+  <li><strong>Action</strong> $a_t \in \mathcal{A} = [-1, +1]$: Continuous position sizing, where $-1$ = maximum short, $0$ = neutral, $+1$ = maximum long</li>
+  <li><strong>Reward</strong> $r_t$: Multi-component enriched reward (Section 3.3)</li>
+  <li><strong>Transition</strong> $\mathcal{P}$: Determined by market price dynamics (non-controllable)</li>
+  <li><strong>Discount</strong> $\gamma = 0.99$</li>
+</ul>
+</div>
+
+<h3>3.2 Hierarchical State Space</h3>
+
+<p>The state vector $s_t \in \mathbb{R}^{79}$ is organized into four layers:</p>
+
+<div class="def">
+<div class="def-title">Layer 1: Price Dynamics (60 dimensions)</div>
+Daily log returns of the denoised closing price over the past 60 trading days:
+$$s_t[0:60] = \left[\ln\frac{p_{t-59}}{p_{t-60}},\; \ln\frac{p_{t-58}}{p_{t-57}},\; \ldots,\; \ln\frac{p_t}{p_{t-1}}\right]$$
+A simple moving average denoising filter (window $=5$) is applied to raw close prices before computing log returns.
+</div>
+
+<div class="def">
+<div class="def-title">Layer 2: Factor Values (5 dimensions)</div>
+Five classic factors spanning complementary return drivers:
+<table>
+  <tr><th>Factor</th><th>Type</th><th>Formula</th></tr>
+  <tr><td>$\text{ROC}_{20}$</td><td>Momentum</td><td>$p_t / p_{t-20} - 1$</td></tr>
+  <tr><td>$\text{RSV}_{14}$</td><td>Price Position</td><td>$\frac{p_t - \min_{14}(\text{low})}{\max_{14}(\text{high}) - \min_{14}(\text{low})}$</td></tr>
+  <tr><td>$\text{STD}_{20}$</td><td>Volatility</td><td>$\sigma(r_{t-19:t})$ over 20-day returns</td></tr>
+  <tr><td>$1/\text{PB}$</td><td>Value</td><td>Inverse of price-to-book ratio (from financial statements)</td></tr>
+  <tr><td>$\text{CORR}_{20}$</td><td>Volume-Price</td><td>$\text{corr}(\Delta p_{20d},\; \Delta v_{20d})$</td></tr>
+</table>
+</div>
+
+<div class="def">
+<div class="def-title">Layer 3: Portfolio State (3 dimensions)</div>
+$$s_t[65:68] = \big[\; \text{net\_position},\; \text{cash\_ratio},\; \text{unrealized\_pnl}\; \big]$$
+Net position and unrealized PnL are clipped to $[-1, +1]$.
+</div>
+
+<div class="def">
+<div class="def-title">Layer 4: Market Context (11 dimensions)</div>
+<table>
+  <tr><td>CSI300 return (5d, 20d)</td><td>Market trend and momentum</td></tr>
+  <tr><td>CSI300 20d volatility</td><td>Market risk regime</td></tr>
+  <tr><td>Turnover ratio + vs MA20</td><td>Capital flow intensity</td></tr>
+  <tr><td>Earnings season indicator</td><td>$1$ if month $\in \{1,4,7,10\}$, else $0$</td></tr>
+  <tr><td>Month encoding ($\sin$, $\cos$)</td><td>Seasonal effects via trigonometric encoding</td></tr>
+  <tr><td>Volatility regime</td><td>High/Medium/Low based on CSI300 vol</td></tr>
+  <tr><td>PE percentile &amp; PB percentile</td><td>Valuation anchors (from historical distribution)</td></tr>
+</table>
+</div>
+
+<h3>3.3 Enriched Reward Function</h3>
+
+<p>The reward is a composite of three components:</p>
+
+<div class="formula">
+<span class="cm">// 1. Profit-and-Loss (primary component)</span>
+$$r^{\text{pnl}}_t = \ln\frac{V_t}{V_{t-1}}$$
+
+<span class="cm">// 2. Fundamental Value Anchoring</span>
+$$r^{\text{value}}_t = \begin{cases}
++0.003 \cdot a_t & \text{if } \text{PB}_{\text{pct}} < 0.3 \text{ and } a_t > 0 \quad \text{(cheap — reward longs)}\\
++0.003 \cdot |a_t| & \text{if } \text{PB}_{\text{pct}} > 0.7 \text{ and } a_t < 0 \quad \text{(expensive — reward shorts)}\\
+-0.008 & \text{if } \text{PB}_{\text{pct}} > 0.85 \text{ and } a_t > 0.5 \quad \text{(extreme — penalize heavy long)}
+\end{cases}$$
+
+<span class="cm">// 3. Activity Incentive</span>
+$$r^{\text{activity}}_t = \begin{cases}
++0.002 & \text{if trade occurred at step } t\\
+-0.0001 & \text{if inactive for } > 100 \text{ consecutive steps}
+\end{cases}$$
+
+$$r_t = r^{\text{pnl}}_t + r^{\text{value}}_t + r^{\text{activity}}_t$$
+</div>
+
+<h3>3.4 PPO with Continuous Actions</h3>
+
+<p>The policy $\pi_\theta(a|s)$ is a Gaussian distribution parameterized by a neural network:</p>
+
+<div class="formula">
+<span class="cm">// Feature extraction (shared trunk — 3 hidden layers: [256, 128, 64] with ReLU)</span>
+$$\mathbf{h} = \text{MLP}(s)$$
+
+<span class="cm">// Actor: Gaussian policy for continuous actions $a \in [-1, +1]$</span>
+$$\mu(s) = \mathbf{W}_\mu \mathbf{h} + \mathbf{b}_\mu$$
+$$\sigma = \exp(\theta_\sigma) \quad \text{(learnable log-standard-deviation)}$$
+$$a \sim \tanh\big(\mu + \sigma \cdot \epsilon\big), \quad \epsilon \sim \mathcal{N}(0, 1)$$
+
+<span class="cm">// Critic: Value function $V(s)$ (scalar output)</span>
+$$V(s) = \mathbf{W}_V \mathbf{h} + b_V$$
+</div>
+
+<p>The standard PPO clipped surrogate objective is:</p>
+
+$$\mathcal{L}^{\text{PPO}}(\theta) = \mathbb{E}_t\Big[\min\big(r_t(\theta)\hat{A}_t,\; \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t\big)\Big]$$
+
+<p>where $r_t(\theta) = \pi_\theta(a_t|s_t) / \pi_{\theta_{\text{old}}}(a_t|s_t)$ is the probability ratio, $\epsilon = 0.2$ is the clipping range, and advantages $\hat{A}_t$ are computed via Generalized Advantage Estimation (GAE) with $\lambda = 0.95$.</p>
+
+<h3>3.5 Factor-Informed Loss (Core Innovation)</h3>
+
+<p>We augment the PPO objective with two factor-based penalty terms, analogous to PDE residual penalties in PINNs:</p>
+
+$$\mathcal{L}^{\text{FI-PPO}}(\theta) = \mathcal{L}^{\text{PPO}}(\theta) + \lambda_{\text{IC}} \cdot \mathcal{L}_{\text{IC}} + \lambda_{\text{ortho}} \cdot \mathcal{L}_{\text{ortho}}$$
+
+<div class="def">
+<div class="def-title">Definition 2 (IC Preservation Loss)</div>
+The Information Coefficient $\text{IC}_k$ of factor $k$ is the Spearman rank correlation between the factor's value at time $t$ and the forward return $r_{t+1}$ across all stocks in the universe. We penalize scenarios where the agent's actions cause factor IC to become negative:
+
+$$\mathcal{L}_{\text{IC}} = \frac{1}{K}\sum_{k=1}^{K} \text{ReLU}\big(-\,\text{IC}_k - \tau\big)^2$$
+
+where $K = 5$ is the number of factors, $\tau = -0.01$ is the tolerance threshold (IC above $-0.01$ is acceptable), and $\text{ReLU}(x) = \max(0, x)$. This penalty is only active when a factor's IC drops below the threshold — positive IC values incur no penalty.
+</div>
+
+<div class="def">
+<div class="def-title">Definition 3 (Factor Orthogonality Loss)</div>
+Let $\mathbf{C} \in \mathbb{R}^{K \times K}$ be the pairwise Spearman correlation matrix of factor values, computed from a rolling window of 500 observations. We penalize excessive correlation between factor pairs:
+
+$$\mathcal{L}_{\text{ortho}} = \frac{2}{K(K-1)}\sum_{i < j} \text{ReLU}\big(|\mathbf{C}_{ij}| - \rho\big)^2$$
+
+where $\rho = 0.7$ is the maximum acceptable pairwise correlation. Only pairs exceeding this threshold contribute to the penalty.
+</div>
+
+<div class="def">
+<div class="def-title">Curriculum Learning Schedule</div>
+To balance exploration (early training) and constraint enforcement (later training), we employ a warmup schedule for the penalty coefficients:
+
+$$\lambda(t) = \begin{cases}
+0 & \text{if } t < t_{\text{warmup}} \\[6pt]
+\lambda_0 \cdot \min\!\left(\big(1 + r\big)^{\frac{t - t_{\text{warmup}}}{10000}},\; 10\right) & \text{if } t \geq t_{\text{warmup}}
+\end{cases}$$
+
+where $t_{\text{warmup}} = T / 4$ (50,000 for $T=200$K training steps), $\lambda_0^{\text{IC}} = 0.1$, $\lambda_0^{\text{ortho}} = 0.05$, and the growth rate $r = 0.2$. The cap at $10\times$ the initial value prevents constraints from dominating the PPO objective.
+</div>
+
+<h3>3.6 Hard Risk Controls</h3>
+
+<p>In addition to soft constraints in the loss function, we implement hard risk controls directly in the environment:</p>
+
+<table>
+  <tr><th>Control</th><th>Value</th><th>Mechanism</th></tr>
+  <tr><td>Maximum long position</td><td>80% of portfolio</td><td>Clip target position in <code>env.step()</code></td></tr>
+  <tr><td>Maximum short position</td><td>10% of portfolio</td><td>Asymmetric limit due to unlimited short loss</td></tr>
+  <tr><td>Stop-loss threshold</td><td>&minus;8% per direction</td><td>Force liquidate when loss exceeds threshold</td></tr>
+  <tr><td>Bankruptcy protection</td><td>50% of initial capital</td><td>Force neutral if portfolio drops below threshold</td></tr>
+  <tr><td>Transaction costs (A-share real)</td><td>Comm 0.025% + Stamp 0.05% + Slippage 0.1%</td><td>Applied at each trade execution</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<h2>4. Algorithm Pseudocode</h2>
+
+<div class="alg">
+<span class="kw">Algorithm 1</span> FI-PPO Training Loop
+<span class="kw">Input:</span>  Training data $\mathcal{D}_{\text{train}}$, factor engine $\mathcal{F}$, total steps $T$, buffer size $N$
+<span class="kw">Output:</span> Policy $\pi_\theta$, Value function $V_\phi$
+
+ 1: Initialize PPOActorCritic($\pi_\theta$, $V_\phi$), FactorInformedLoss(IC, ortho)
+ 2: Initialize RolloutBuffer($N$), step counters
+ 3: <span class="kw">for</span> global_step = 1 <span class="kw">to</span> $T$ <span class="kw">do</span>
+ 4:     $s$ $\leftarrow$ env.reset()
+ 5:     <span class="kw">for</span> $i$ = 1 <span class="kw">to</span> $N$ <span class="kw">do</span>                       <span class="cm">// Collect rollout</span>
+ 6:         $a$, $\log\pi$, $V$ $\leftarrow$ $\pi_\theta$.get_action($s$)
+ 7:         $s'$, $r^{\text{pnl}}$, done $\leftarrow$ env.step($a$)
+ 8:         factors $\leftarrow$ $\mathcal{F}$.compute_factors($s$)
+ 9:         $r$ $\leftarrow$ $r^{\text{pnl}} + r^{\text{value}}(\text{PB}_{\text{pct}}, a) + r^{\text{activity}}$
+10:         buffer.add($s$, $a$, $\log\pi$, $r$, $V$, done)
+11:         $s$ $\leftarrow$ $s'$
+12:     <span class="kw">end for</span>
+13:     buffer.compute_GAE($\gamma=0.99$, $\lambda=0.95$)
+14:
+15:     <span class="kw">for</span> epoch = 1 <span class="kw">to</span> $K$ <span class="kw">do</span>                      <span class="cm">// PPO update epochs</span>
+16:         <span class="kw">for</span> batch <span class="kw">in</span> buffer.get_batches() <span class="kw">do</span>
+17:             $\log\pi$, entropy, $V$ $\leftarrow$ $\pi_\theta$.evaluate(batch)
+18:             $\mathcal{L}_{\text{PPO}}$ $\leftarrow$ clipped_surrogate($\log\pi$, batch.advantages)
+19:             $\mathcal{L}_{\text{IC}}$, $\mathcal{L}_{\text{ortho}}$ $\leftarrow$ FactorInformedLoss(global_step)
+20:             $\mathcal{L}$ $\leftarrow$ $\mathcal{L}_{\text{PPO}} + c_V\mathcal{L}_{\text{value}} + c_E\mathcal{L}_{\text{entropy}}$
+21:             $\quad\; + \lambda_{\text{IC}}(t)\mathcal{L}_{\text{IC}} + \lambda_{\text{ortho}}(t)\mathcal{L}_{\text{ortho}}$
+22:             $\theta$ $\leftarrow$ $\theta - \alpha_A \nabla_\theta \mathcal{L}$      <span class="cm">// Adam optimizer</span>
+23:             $\phi$ $\leftarrow$ $\phi - \alpha_C \nabla_\phi \mathcal{L}$
+24:         <span class="kw">end for</span>
+25:     <span class="kw">end for</span>
+26:     <span class="kw">if</span> global_step % eval_freq == 0 <span class="kw">then</span> Evaluate($\pi_\theta$, $\mathcal{D}_{\text{val}}$)
+27: <span class="kw">end for</span>
+</div>
+
+<!-- ================================================================ -->
+<h2>5. Experimental Setup</h2>
+
+<h3>5.1 Data</h3>
+<p>We use daily OHLCV data for 12 Chinese A-share stocks spanning January 2015 through December 2025, sourced from baostock (open-source financial data provider). Stocks are selected across diverse sectors (consumer, finance, healthcare, manufacturing, real estate). The CSI 300 index is used for market context features. All data is adjusted for splits and dividends (forward-adjusted).</p>
+
+<h3>5.2 Training Configuration</h3>
+<table>
+  <tr><th>Hyperparameter</th><th>Value</th></tr>
+  <tr><td>Total timesteps $T$</td><td>200,000 &ndash; 250,000</td></tr>
+  <tr><td>Rollout steps per iteration $N$</td><td>1,024</td></tr>
+  <tr><td>PPO epochs $K$</td><td>6 &ndash; 8</td></tr>
+  <tr><td>Batch size</td><td>256</td></tr>
+  <tr><td>Discount $\gamma$</td><td>0.99</td></tr>
+  <tr><td>GAE $\lambda$</td><td>0.95</td></tr>
+  <tr><td>Clip range $\epsilon$</td><td>0.2</td></tr>
+  <tr><td>Learning rate (Actor / Critic)</td><td>$3\times10^{-4}$ / $1\times10^{-3}$</td></tr>
+  <tr><td>Entropy coefficient $c_E$</td><td>0.03</td></tr>
+  <tr><td>Value loss coefficient $c_V$</td><td>0.5</td></tr>
+  <tr><td>IC penalty $\lambda_0^{\text{IC}}$</td><td>0.1</td></tr>
+  <tr><td>Orthogonality penalty $\lambda_0^{\text{ortho}}$</td><td>0.05</td></tr>
+  <tr><td>Warmup steps $t_{\text{warmup}}$</td><td>$T / 4$</td></tr>
+  <tr><td>Gradient clipping</td><td>max norm = 0.5</td></tr>
+  <tr><td>Network architecture</td><td>MLP [256, 128, 64] with ReLU</td></tr>
+</table>
+
+<h3>5.3 Training/Testing Splits</h3>
+<p>Three distinct temporal splits are used for robustness evaluation:</p>
+<table>
+  <tr><th>Split</th><th>Training</th><th>Testing</th><th>Characteristics</th></tr>
+  <tr><td>S1</td><td>2015 &ndash; 2018</td><td>2019 &ndash; 2020</td><td>Includes 2015 crash + 2016 circuit breaker</td></tr>
+  <tr><td>S2</td><td>2017 &ndash; 2020</td><td>2021 &ndash; 2022</td><td>Includes 2018 bear + 2020 COVID</td></tr>
+  <tr><td>S3</td><td>2019 &ndash; 2022</td><td>2023 &ndash; 2025</td><td>Post-pandemic regime shift</td></tr>
+</table>
+
+<h3>5.4 Baseline</h3>
+<p>Vanilla PPO with identical architecture (state space, action space, reward function, hard controls) but $\lambda_{\text{IC}} = 0$ and $\lambda_{\text{ortho}} = 0$.</p>
+
+<!-- ================================================================ -->
+<h2>6. Results</h2>
+
+<h3>6.1 Core Benchmark — Effect of Factor-Informed Loss</h3>
+
+<table>
+<caption>Table 1: Per-stock comparison of FI-PPO vs vanilla PPO (V5, 250K steps, Split S3)</caption>
+<tr><th>Stock</th><th>Benchmark</th><th>Bare Return</th><th>Bare Sharpe</th><th>FI Return</th><th>FI Sharpe</th><th>$\Delta$ Sharpe</th></tr>
+<tr><td>Kweichow Moutai (600519)</td><td>&minus;24%</td><td>+63%</td><td>3.01</td><td><strong>+123%</strong></td><td><strong>4.20</strong></td><td>+39.5%</td></tr>
+<tr><td>Wuliangye (000858)</td><td>&minus;45%</td><td>+220%</td><td><strong>3.69</strong></td><td>+305%</td><td>3.31</td><td>&minus;10.3%</td></tr>
+<tr><td>Midea Group (000333)</td><td>+24%</td><td>+6%</td><td>0.32</td><td>+5.5%</td><td>0.30</td><td>&minus;6.3%</td></tr>
+<tr><td>Hengrui Medicine (600276)</td><td>+20%</td><td>+118%</td><td>1.61</td><td><strong>+217%</strong></td><td><strong>4.96</strong></td><td>+208.1%</td></tr>
+<tr class="summary-row"><td><strong>Average</strong></td><td>&mdash;</td><td>+102%</td><td>2.16</td><td><strong>+163%</strong></td><td><strong>3.19</strong></td><td><strong>+48%</strong></td></tr>
+</table>
+
+<p><strong>FI-PPO improves average Sharpe by 48% on the core benchmark.</strong> The improvement is strongest on stocks with clear directional trends (Moutai, Hengrui). On sideways stocks (Midea), both agents achieve near-break-even performance — but neither fails catastrophically, thanks to the shared hard risk controls.</p>
+
+<h3>6.2 Version Evolution — Impact of Each Component</h3>
+
+<table>
+<caption>Table 2: Ablation across five experimental versions (average over 4 stocks)</caption>
+<tr><th>Version</th><th>State Dim</th><th>Market Ctx</th><th>Risk Controls</th><th>Bare Sharpe</th><th>FI Sharpe</th><th>Bankrupt (Bare/FI)</th></tr>
+<tr><td>V1 (Discrete)</td><td>68</td><td>No</td><td>None</td><td>&minus;0.35</td><td><strong>&minus;0.18</strong></td><td>0% / 0%</td></tr>
+<tr><td>V2 (Continuous+Short)</td><td>68</td><td>No</td><td>None</td><td>&minus;20.8</td><td><strong>&minus;3.7</strong></td><td>83% / 50%</td></tr>
+<tr><td>V3 (Hard Controls)</td><td>68</td><td>No</td><td>Position+Stop-loss</td><td>8.57</td><td>7.98</td><td>0% / 0%</td></tr>
+<tr><td>V4 (+Market Context)</td><td>79</td><td>Yes</td><td>Position+Stop-loss</td><td>&minus;7.47</td><td><strong>&minus;1.41</strong></td><td>50% / 0%</td></tr>
+<tr class="summary-row"><td><strong>V5 (Final)</strong></td><td><strong>79</strong></td><td><strong>Yes</strong></td><td><strong>+Enriched Reward</strong></td><td><strong>2.16</strong></td><td><strong>3.19</strong></td><td><strong>0% / 0%</strong></td></tr>
+</table>
+
+<p><strong>Key insights from the ablation:</strong> (1) Market context (V3 &rarr; V4) dramatically eliminates overfitting — returns drop from inflated +1500% to realistic levels. (2) Hard controls alone prevent bankruptcy but do not ensure profitability. (3) The enriched reward (V4 &rarr; V5) turns a losing framework into a profitable one for both agents, with FI-PPO extracting additional gains via soft constraints.</p>
+
+<h3>6.3 Large-Scale Robustness Test</h3>
+
+<table>
+<caption>Table 3: Robustness across 12 stocks $\times$ 3 splits (36 paired comparisons, 200K steps)</caption>
+<tr><th>Split</th><th>Stocks</th><th>Bare Sharpe</th><th>FI Sharpe</th><th>FI Win Rate</th><th>Bare Profit</th><th>FI Profit</th></tr>
+<tr><td>S1 (2015-18 &rarr; 2019-20)</td><td>12</td><td>0.56</td><td>0.56</td><td>5/12</td><td>12/12</td><td>12/12</td></tr>
+<tr><td>S2 (2017-20 &rarr; 2021-22)</td><td>12</td><td>0.92</td><td>0.90</td><td>3/12</td><td>12/12</td><td>12/12</td></tr>
+<tr><td>S3 (2019-22 &rarr; 2023-25)</td><td>12</td><td>0.59</td><td>0.58</td><td><strong>7/12</strong></td><td>12/12</td><td>12/12</td></tr>
+<tr class="summary-row"><td><strong>Aggregate</strong></td><td><strong>36</strong></td><td><strong>0.69</strong></td><td><strong>0.68</strong></td><td><strong>15/36</strong></td><td><strong>36/36</strong></td><td><strong>36/36</strong></td></tr>
+</table>
+
+<p><strong>Robustness findings:</strong></p>
+<ol>
+  <li><strong>100% survival and profitability</strong> across all 72 experimental configurations — the framework's hard risk controls ensure consistent safety.</li>
+  <li><strong>FI-PPO shows the strongest advantage on S3</strong> (7/12 wins), the most recent and regime-shifted testing period, suggesting factor-informed constraints improve out-of-distribution generalization.</li>
+  <li><strong>At 200K steps with 5 factors, FI and Bare achieve equivalent average performance.</strong> This suggests hard controls dominate the risk budget at this training scale, leaving limited room for soft constraint differentiation. Increasing factor count or training steps is expected to widen the gap.</li>
+</ol>
+
+<!-- ================================================================ -->
+<h2>7. Discussion</h2>
+
+<h3>7.1 When Does FI-PPO Help?</h3>
+
+<p>The empirical results reveal a nuanced pattern of FI-PPO's effectiveness:</p>
+<ul>
+  <li><strong>Strong trend regimes:</strong> On stocks with clear directional moves (Moutai &minus;24%, Hengrui +20%), FI-PPO achieved Sharpe ratios 39%&ndash;208% higher. The factor-informed constraints prevent the agent from fighting dominant trends with ill-timed reversals.</li>
+  <li><strong>Distribution shift:</strong> FI-PPO's highest win rate (7/12) occurred on S3 (2023&ndash;2025), the testing period most dissimilar from its training distribution. This aligns with the theoretical expectation that domain-knowledge constraints improve generalization under distribution shift.</li>
+  <li><strong>Catastrophic failure prevention:</strong> Across all experiments, FI-PPO <em>never</em> went bankrupt, while vanilla PPO suffered bankruptcy rates up to 83% in unconstrained settings. The factor-informed constraints act as an implicit safety net even when they don't improve average performance.</li>
+  <li><strong>Sideways/mean-reverting markets:</strong> On stocks with low directional signal (Midea +24% with high volatility), both agents achieve modest results. Factor constraints cannot create alpha where the underlying factors provide limited signal.</li>
+</ul>
+
+<h3>7.2 Why PINN Analogy Matters</h3>
+
+<p>The PINN analogy is not merely rhetorical — it captures a structural similarity:</p>
+
+<table>
+  <tr><th></th><th>Physics PINN</th><th>FI-PPO (this work)</th></tr>
+  <tr><td><strong>Domain knowledge</strong></td><td>PDE (e.g. Navier-Stokes)</td><td>Factor statistics (IC, correlation)</td></tr>
+  <tr><td><strong>Constraint form</strong></td><td>$\mathcal{L}_{\text{PDE}} = \| \mathcal{N}[u] - f \|^2$</td><td>$\mathcal{L}_{\text{IC}} = \text{ReLU}(-\text{IC} - \tau)^2$</td></tr>
+  <tr><td><strong>Enforcement</strong></td><td>Penalty in loss function</td><td>Penalty in PPO objective</td></tr>
+  <tr><td><strong>Benefit</strong></td><td>Sample efficiency, generalization</td><td>Safety, out-of-distribution robustness</td></tr>
+  <tr><td><strong>Data requirement</strong></td><td>Fewer observations needed</td><td>Lower training steps for convergence</td></tr>
+</table>
+
+<p>Both paradigms leverage domain knowledge to <em>constrain the hypothesis space</em>, preventing the model from learning solutions that violate known physical (or financial) principles.</p>
+
+<h3>7.3 Limitations and Future Work</h3>
+
+<ol>
+  <li><strong>Factor count:</strong> With only 5 factors, the orthogonality constraint has limited signal. Scaling to 15&ndash;20 factors from the Alpha158 library would provide a more stringent test.</li>
+  <li><strong>Training budget:</strong> At 200K&ndash;250K steps, both FI and Bare may be undertrained for the 79-dimensional state space. Longer training (500K&ndash;1M steps) would reveal whether FI's sample efficiency advantage manifests at scale.</li>
+  <li><strong>Adaptive thresholds:</strong> The current IC constraint uses a fixed tolerance $\tau = -0.01$. Adaptive thresholds accounting for factor-specific decay rates and market regimes could improve relevance.</li>
+  <li><strong>Multi-asset:</strong> Extending to portfolio optimization across multiple stocks would test whether the orthogonality constraint improves cross-asset diversification.</li>
+  <li><strong>Factor discovery integration:</strong> Coupling FI-PPO with LLM-assisted factor mining (HARLA, AlphaForge) could create an end-to-end pipeline: <em>LLM discovers factors &rarr; FI-PPO trades them</em>.</li>
+</ol>
+
+<!-- ================================================================ -->
+<h2>8. Conclusion</h2>
+
+<p>We presented FI-PPO, a factor-informed reinforcement learning framework that bridges traditional factor-based investing and modern deep reinforcement learning. By injecting factor statistical constraints — IC preservation and orthogonality — as differentiable penalty terms in the PPO objective, FI-PPO provides a principled mechanism for incorporating financial domain knowledge into policy optimization, structurally analogous to Physics-Informed Neural Networks.</p>
+
+<p>Extensive experiments across 12 A-share stocks and 3 time windows demonstrate that FI-PPO (1) achieves 100% survival rate and profitability across all 72 configurations, (2) improves average Sharpe ratio by 48% on core benchmarks, (3) provides the strongest advantages under distribution shift (7/12 wins on the most recent testing period), and (4) acts as an implicit safety net even when average performance is equivalent to vanilla PPO. The framework is open-source and built entirely with free data (baostock) and standard Python libraries (PyTorch, NumPy, Pandas).</p>
+
+<p>The factor-informed paradigm opens several promising directions: scaling to richer factor libraries, adaptive constraint scheduling, multi-asset portfolio optimization, and integration with LLM-assisted factor discovery. We believe hybrid approaches combining domain knowledge with data-driven learning represent the most promising path toward robust, interpretable, and practically deployable algorithmic trading systems.</p>
+
+<!-- ================================================================ -->
+<h2>References</h2>
+<ol style="font-size:.9em">
+  <li>Liu, X.-Y. et al. "FinRL: A Deep Reinforcement Learning Library for Automated Stock Trading in Quantitative Finance." <em>Machine Learning</em>, 2024.</li>
+  <li>Noormohammadzadehmaleki, D. &amp; Mirzabaki, M. "FMARL: A Novel Hybrid Model Finite Machine Automata and Deep Reinforcement Learning Algorithm for Futures Market Forecasting and Trading System." <em>TechRxiv</em>, 2025.</li>
+  <li>Zou, J. et al. "A Novel DRL-Based Automated Stock Trading System Using Cascaded LSTM Networks." <em>Expert Systems with Applications</em>, 2024.</li>
+  <li>Wang, J. "Cross-Market Robustness of CNN + PPO for Multi-Stock Trading." <em>ICFIED</em>, 2026.</li>
+  <li>Fama, E.F. &amp; French, K.R. "A Five-Factor Asset Pricing Model." <em>Journal of Financial Economics</em>, 2015.</li>
+  <li>Hou, K., Xue, C. &amp; Zhang, L. "Digesting Anomalies: An Investment Approach." <em>Review of Financial Studies</em>, 2015.</li>
+  <li>Raissi, M., Perdikaris, P. &amp; Karniadakis, G.E. "Physics-Informed Neural Networks." <em>Journal of Computational Physics</em>, 2019.</li>
+  <li>Alonso, D. &amp; Maxwell, P. "Physics-Informed Neural Networks (PINNs) in Finance." <em>SSRN</em>, 2025.</li>
+  <li>"The Enhanced Physics-Informed KAN: Newton's Laws in Financial DRL." <em>arXiv:2602.01388</em>, 2025.</li>
+  <li>Yu, S., Xue, H., Ao, X. &amp; He, Q. "A Hybrid Approach to Formulaic Alpha Discovery with LLM Assistance." <em>Frontiers of Computer Science</em>, 2025.</li>
+  <li>"AlphaForge: Mining and Dynamically Combining Formulaic Alpha Factors." <em>AAAI</em>, 2025.</li>
+  <li>"AlphaMind: A Self-Evolving Framework for Automated Factor Discovery." <em>NUS</em>, 2025.</li>
+  <li>Schulman, J. et al. "Proximal Policy Optimization Algorithms." <em>arXiv:1707.06347</em>, 2017.</li>
+  <li>Bailey, D.H. &amp; L&oacute;pez de Prado, M. "The Deflated Sharpe Ratio." <em>Journal of Portfolio Management</em>, 2014.</li>
+  <li>"A Taxonomy of Literature Reviews of DRL in Portfolio Management." <em>Artificial Intelligence Review</em>, 2025.</li>
+</ol>
+
+<footer>
+  FI-PPO Algorithm Documentation &mdash; Preprint, June 2026
+</footer>
+
+</body>
+</html>

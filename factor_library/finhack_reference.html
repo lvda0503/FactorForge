@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinHack 因子系统 — 完整参考手册</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--dim:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d2991d;--red:#f85149;--purple:#a371f7;--cyan:#39c5cf}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;line-height:1.6;max-width:1300px;margin:0 auto;padding:20px}
+  h1{font-size:2em;margin:20px 0 10px;color:#fff;border-bottom:2px solid var(--border);padding-bottom:10px}
+  h2{font-size:1.5em;margin:40px 0 15px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:1.2em;margin:25px 0 10px;color:var(--green)}
+  h4{font-size:1.05em;margin:20px 0 8px;color:var(--orange)}
+  p,li{margin:6px 0}
+  a{color:var(--accent)}
+  nav.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:20px 0}
+  nav.toc h2{margin:0 0 12px;font-size:1.2em;color:#fff;border:none}
+  nav.toc ol{padding-left:20px;columns:2}
+  nav.toc li{margin:4px 0;font-size:.95em}
+  .stats{display:flex;gap:15px;flex-wrap:wrap;margin:15px 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 18px;text-align:center;min-width:100px}
+  .stat .num{font-size:1.8em;font-weight:bold;color:var(--accent)}
+  .stat .lbl{font-size:.85em;color:var(--dim)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:15px 0}
+  .card h3{margin-top:0}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.8em;font-weight:bold;margin-right:6px}
+  .b-ok{background:#1f3a2c;color:var(--green)} .b-warn{background:#2a1f1a;color:var(--orange)} .b-blue{background:#1a2a3a;color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:10px;margin:10px 0}
+  .grid-item{background:#1c2333;border:1px solid var(--border);border-radius:6px;padding:12px 15px}
+  .grid-item h4{margin:0 0 6px;font-size:.95em}
+  .grid-item code{font-size:.85em}
+  .grid-item p{font-size:.85em;color:var(--dim);margin:4px 0 0}
+  .formula{background:#0d1117;border-left:3px solid var(--accent);padding:12px 16px;margin:10px 0;font-family:'Consolas','Courier New',monospace;font-size:.95em;overflow-x:auto;white-space:pre-wrap}
+  .fc{color:var(--green)} .fcm{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9em}
+  th{background:#1c2333;color:var(--accent);padding:8px 12px;text-align:left}
+  td{padding:7px 12px;border-top:1px solid var(--border)}
+  tr:hover{background:#1a1f2b}
+  code{background:#1c2333;color:var(--green);padding:1px 6px;border-radius:3px;font-family:'Consolas',monospace;font-size:.95em}
+  .arch{background:#0d1117;padding:20px;border-radius:6px;font-family:monospace;font-size:.85em;text-align:center;line-height:1.8}
+  .cat-header{background:linear-gradient(135deg,#1c2333,#161b22);border:1px solid var(--border);border-radius:8px;padding:15px 20px;margin:30px 0 15px}
+  .cat-header h2{margin:0 0 5px;border:none}
+  .cat-header p{color:var(--dim);margin:0}
+</style>
+</head>
+<body>
+<h1>🔧 FinHack 因子系统 — 完整参考手册</h1>
+<p style="color:var(--dim)">GitHub: neoctopus/finhack · A股全流程量化框架 · 公式引擎 + 因子分析 + AI挖掘</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">50+</div><div class="lbl">公式引擎函数</div></div>
+  <div class="stat"><div class="num">101+191</div><div class="lbl">Alpha公式</div></div>
+  <div class="stat"><div class="num">63+12</div><div class="lbl">技术指标</div></div>
+  <div class="stat"><div class="num">3</div><div class="lbl">AI挖掘方式</div></div>
+  <div class="stat"><div class="num">120+</div><div class="lbl">财务指标</div></div>
+</div>
+
+<nav class="toc"><h2>📑 目录</h2>
+<ol>
+  <li><a href="#s1">架构总览</a></li>
+  <li><a href="#s2">alphaEngine — 公式引擎全部函数 (50+)</a></li>
+  <li><a href="#s3">Alpha101 前10个公式</a></li>
+  <li><a href="#s4">Alpha191 前10个公式</a></li>
+  <li><a href="#s5">factorAnalyzer — 因子分析引擎</a></li>
+  <li><a href="#s6">factorMining — AI自动因子挖掘</a></li>
+  <li><a href="#s7">TA-Lib 技术指标 (63个)</a></li>
+  <li><a href="#s8">扩展技术指标 (12个)</a></li>
+  <li><a href="#s9">财务指标 (120+)</a></li>
+  <li><a href="#s10">资金流与涨跌停</a></li>
+  <li><a href="#s11">聚宽移植指南</a></li>
+</ol></nav>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s1">一、架构总览</h2></div>
+<div class="arch">
+┌──────────────────────────────────────────────────────┐<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FinHack 因子系统架构&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+├──────────────────────────────────────────────────────┤<br>
+│&nbsp;&nbsp;CLI → DefaultFactor → ├─ compute (单因子计算)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ analys&nbsp;&nbsp;(因子分析 IC/IR/Sharpe) │<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ mining&nbsp;&nbsp;(AI挖掘: GPT/Kimi/GPlearn) │<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ calc&nbsp;&nbsp;&nbsp;&nbsp;(公式计算+分析)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ list&nbsp;&nbsp;&nbsp;&nbsp;(列出所有因子)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;alphaEngine (公式解析+计算)&nbsp;&nbsp;factorAnalyzer (IC/IR/Sharpe)&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;因子数据 (DataFrame)&nbsp;→&nbsp;CSV存储&nbsp;→&nbsp;MySQL分析结果&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+└──────────────────────────────────────────────────────┘<br>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s2">二、alphaEngine 公式引擎 — 全部函数 <span class="badge b-ok">50+</span></h2></div>
+
+<div class="card"><h3>算术运算 (6个)</h3>
+<div class="grid2">
+<div class="grid-item"><h4>add(x, y)</h4><code>x + y</code></div>
+<div class="grid-item"><h4>sub(x, y)</h4><code>x - y</code></div>
+<div class="grid-item"><h4>mul(x, y)</h4><code>x * y</code></div>
+<div class="grid-item"><h4>div(x, y)</h4><code>x / y</code></div>
+<div class="grid-item"><h4>sqrt(x)</h4><code>np.sqrt(x)</code></div>
+<div class="grid-item"><h4>abs(x)</h4><code>np.absolute(x)</code></div>
+</div></div>
+
+<div class="card"><h3>数学变换 (9个)</h3>
+<div class="grid2">
+<div class="grid-item"><h4>log(x)</h4><code>np.log(x) — 自然对数</code></div>
+<div class="grid-item"><h4>sign(x)</h4><code>np.sign(x) — 符号函数</code></div>
+<div class="grid-item"><h4>signedpower(x, t)</h4><code>sign(x) * |x|^t</code></div>
+<div class="grid-item"><h4>sin(x)</h4><code>⚠ 实际调用 np.sign (bug)</code></div>
+<div class="grid-item"><h4>cos(x)</h4><code>np.cos(x)</code></div>
+<div class="grid-item"><h4>tan(x)</h4><code>np.tan(x)</code></div>
+<div class="grid-item"><h4>max(x,y) / min(x,y)</h4><code>逐元素取最大/最小值</code></div>
+<div class="grid-item"><h4>where(c, t, f)</h4><code>三元条件: c为True→t, 否则→f</code></div>
+<div class="grid-item"><h4>scale(df, k=1)</h4><code>df / 1000 (简单缩放)</code></div>
+</div></div>
+
+<div class="card"><h3>滚动窗口函数 (20个) <span class="badge b-blue">核心</span></h3>
+<div class="grid2">
+<div class="grid-item"><h4>ts_sum(df, w=10)</h4><code>滚动求和 (bn.move_sum)</code></div>
+<div class="grid-item"><h4>mean(df, w=10)</h4><code>滚动均值 (bn.move_mean)</code></div>
+<div class="grid-item"><h4>stddev(df, w=10)</h4><code>滚动标准差 (bn.move_std)</code></div>
+<div class="grid-item"><h4>ts_min(df, w=10)</h4><code>滚动最小值</code></div>
+<div class="grid-item"><h4>ts_max(df, w=10)</h4><code>滚动最大值</code></div>
+<div class="grid-item"><h4>ts_rank(df, w=10)</h4><code>滚动百分位排名 [0,1]</code></div>
+<div class="grid-item"><h4>ts_argmax(df, w=10)</h4><code>窗口内最大值位置</code></div>
+<div class="grid-item"><h4>ts_argmin(df, w=10)</h4><code>窗口内最小值位置</code></div>
+<div class="grid-item"><h4>product(df, w=10)</h4><code>滚动累乘</code></div>
+<div class="grid-item"><h4>delay(df, d=1)</h4><code>滞后d期: groupby.shift(d)</code></div>
+<div class="grid-item"><h4>delta(df, d=1)</h4><code>d期差分: groupby.diff(d)</code></div>
+<div class="grid-item"><h4>decay_linear(df, w=10)</h4><code>线性衰减加权: 权重 w,w-1,...,1</code></div>
+<div class="grid-item"><h4>wma(df, w=10)</h4><code>加权移动平均 (同decay_linear)</code></div>
+<div class="grid-item"><h4>covariance(x, y, w=10)</h4><code>滚动协方差</code></div>
+<div class="grid-item"><h4>correlation(x, y, w=10)</h4><code>滚动相关系数 [-1,1]</code></div>
+<div class="grid-item"><h4>regbeta(A, B, w=0)</h4><code>滚动回归beta</code></div>
+<div class="grid-item"><h4>sma(x, n, m=2)</h4><code>递归SMA: SMA=(P·m+SMA₋₁·(n-m))/n</code></div>
+<div class="grid-item"><h4>sumif(df, w, cond)</h4><code>条件滚动求和</code></div>
+<div class="grid-item"><h4>count(cond, n)</h4><code>窗口中True的个数</code></div>
+<div class="grid-item"><h4>sumac(df, w=10)</h4><code>滚动累计求和 (前向填充)</code></div>
+</div></div>
+
+<div class="card"><h3>排名与极值函数 (4个)</h3>
+<div class="grid2">
+<div class="grid-item"><h4>rank(df)</h4><code>横截面百分位排名: groupby('trade_date').rank(pct=True)</code></div>
+<div class="grid-item"><h4>lowday(df, w=10)</h4><code>距窗口内最低值的天数</code></div>
+<div class="grid-item"><h4>highday(df, w=10)</h4><code>距窗口内最高值的天数</code></div>
+<div class="grid-item"><h4>sequence(n)</h4><code>np.arange(1,n+1) — 用于回归自变量</code></div>
+</div></div>
+
+<div class="card"><h3>便捷快捷函数 (4+2个)</h3>
+<div class="grid2">
+<div class="grid-item"><h4>delay_1(df) / delay_3(df)</h4><code>1天/3天滞后</code></div>
+<div class="grid-item"><h4>delay_5(df) / delay_7(df)</h4><code>5天/7天滞后</code></div>
+<div class="grid-item"><h4>minp(d)</h4><code>计算滚动min_periods: d≤10→d-1, else→d*2//3</code></div>
+<div class="grid-item"><h4>save_lastdate(res, name)</h4><code>保存最新日期的因子快照到CSV</code></div>
+</div></div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s3">三、Alpha101 公式 (前10个)</h2></div>
+
+<div class="card"><h3>Alpha #001 — 波动率排名</h3>
+<div class="formula"><span class="fc">rank(ts_argmax(signedpower(($returns < 0) ? stddev($returns, 20) : $close, 2), 5)) - 0.5</span></div>
+<p>收益率为负时用波动率，为正时用收盘价，取平方后的5日argmax排名。</p></div>
+
+<div class="card"><h3>Alpha #002 — 量价相关性</h3>
+<div class="formula"><span class="fc">-1 * correlation(rank(delta(log($volume), 2)), rank(($close - $open) / $open), 6)</span></div>
+<p>成交量对数的2日变化的排名 与 日内涨跌幅的排名 的6日负相关性。</p></div>
+
+<div class="card"><h3>Alpha #003 — 开盘-成交量相关</h3>
+<div class="formula"><span class="fc">-1 * correlation(rank($open), rank($volume), 10)</span></div></div>
+
+<div class="card"><h3>Alpha #004 — 最低价时序排名</h3>
+<div class="formula"><span class="fc">-1 * ts_rank(rank($low), 9)</span></div></div>
+
+<div class="card"><h3>Alpha #005 — 开盘-VWAP偏离</h3>
+<div class="formula"><span class="fc">rank(($open - (sum($vwap, 10) / 10))) * (-1 * abs(rank(($close - $vwap))))</span></div></div>
+
+<div class="card"><h3>Alpha #006 — 开盘-成交量裸相关</h3>
+<div class="formula"><span class="fc">-1 * correlation($open, $volume, 10)</span></div></div>
+
+<div class="card"><h3>Alpha #007 — 放量动量</h3>
+<div class="formula"><span class="fc">IF(mean($volume,20) < $volume, -1*ts_rank(abs(delta($close,7)),60)*sign(delta($close,7)), -1)</span></div>
+<p>放量日=时序排名乘方向，缩量日=-1。</p></div>
+
+<div class="card"><h3>Alpha #008 — 开盘收益交叉</h3>
+<div class="formula"><span class="fc">-1*rank((sum($open,5)*sum($returns,5))-delay(sum($open,5)*sum($returns,5),10))</span></div></div>
+
+<div class="card"><h3>Alpha #009 — 条件动量</h3>
+<div class="formula"><span class="fc">IF(0 < ts_min(delta($close,1),5), delta($close,1),
+IF(ts_max(delta($close,1),5) < 0, delta($close,1), -1*delta($close,1)))</span></div>
+<p>5日内全是涨或全是跌=持有动量和方向；否则反转。</p></div>
+
+<div class="card"><h3>Alpha #010 — 排名版条件动量(4日)</h3>
+<div class="formula"><span class="fc">rank(同Alpha#009但窗口=4)</span></div></div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s4">四、Alpha191 公式 (前10个)</h2></div>
+
+<div class="card"><h3>Alpha #001</h3><div class="formula"><span class="fc">-1*corr(rank(delta(log($volume),1)), rank(($close-$open)/$open), 6)</span></div></div>
+<div class="card"><h3>Alpha #002 — CLV差分</h3><div class="formula"><span class="fc">-1*delta((($close-$low)-($high-$close))/($high-$low), 1)</span></div></div>
+<div class="card"><h3>Alpha #003 — OBV累加</h3><div class="formula"><span class="fc">sum(IF($close==delay($close,1),0,$close-IF($close>delay($close,1),min($low,delay($close,1)),max($high,delay($close,1)))),6)</span></div></div>
+<div class="card"><h3>Alpha #004 — 布林带突破</h3><div class="formula"><span class="fc">IF(MA8+STD8<MA2,-1, IF(MA2<MA8-STD8,1, IF(vol>MAvol20,1,-1)))</span></div></div>
+<div class="card"><h3>Alpha #005 — 量价时序排名相关</h3><div class="formula"><span class="fc">-1*tsmax(corr(tsrank($volume,5),tsrank($high,5),5),3)</span></div></div>
+<div class="card"><h3>Alpha #006 — 加权价格动量</h3><div class="formula"><span class="fc">rank(sign(delta(($open*0.85+$high*0.15),4)))*-1</span></div></div>
+<div class="card"><h3>Alpha #007 — VWAP偏离×量变</h3><div class="formula"><span class="fc">(rank(max(($vwap-$close),3))+rank(min(($vwap-$close),3)))*rank(delta($volume,3))</span></div></div>
+<div class="card"><h3>Alpha #008 — 混合价格动量</h3><div class="formula"><span class="fc">rank(delta((($high+$low)/2*0.2+$vwap*0.8),4)-1)</span></div></div>
+<div class="card"><h3>Alpha #009 — 量价效率</h3><div class="formula"><span class="fc">sma((($high+$low)/2-delay(($high+$low)/2,1))*($high-$low)/$volume, 7, 2)</span></div></div>
+<div class="card"><h3>Alpha #010 — 条件平方极值</h3><div class="formula"><span class="fc">rank(max(($returns<0?std($returns,20):$close)^2, 5))</span></div></div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s5">五、factorAnalyzer — 因子分析引擎</h2></div>
+<div class="card">
+<h3>核心分析方法</h3>
+<table>
+  <tr><th>方法</th><th>功能</th><th>输出</th></tr>
+  <tr><td><code>analys()</code></td><td>全周期IC/IR/Sharpe分析</td><td>多窗口(1~21天)评分 → MySQL</td></tr>
+  <tr><td><code>Sharpe(df, n=10)</code></td><td>加权平均夏普比率</td><td>10分组分层收益 → 加权夏普</td></tr>
+  <tr><td><code>ICIR(df, period=120)</code></td><td>信息系数和比率</td><td>IC = mean(corr), IR = IC/std(IC)</td></tr>
+  <tr><td><code>rank_ICIR(df, period=120)</code></td><td>Rank IC/IR</td><td>Spearman风格 = 先排名再算IC</td></tr>
+  <tr><td><code>alphalens()</code></td><td>完整alphalens分析</td><td>行业中性化 + 分组收益 + IC + 自相关</td></tr>
+  <tr><td><code>stock_pool(max=300)</code></td><td>构建分析股池</td><td>分层抽样: PE/PB/PS/市值各三分位</td></tr>
+</table>
+<div class="formula">
+<span class="fcm"># 综合评分公式</span>
+<span class="fc">score = |IC| × 10 + |IR| + |max_sharpe|</span>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s6">六、factorMining — AI自动因子挖掘 <span class="badge b-warn">3种方式</span></h2></div>
+<div class="card">
+<h3>GPT/Kimi 大语言模型挖掘</h3>
+<p>流程：加载因子列表+可用字段 → 发送prompt给AI → AI返回因子公式 → 验证$column引用 → 计算因子值 → 评估IC/IR → 存入factors_mining表</p>
+<h3>gplearn 遗传编程挖掘</h3>
+<p>配置：10代 × 500种群 × 100名人堂 × 50最终因子<br>运算符：22个自定义函数 + 9个基础数学函数<br>流程：拟合25只股票训练集 → 生成公式 → 在300只验证集上评估</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s7">七、TA-Lib 技术指标 <span class="badge b-ok">63个</span></h2></div>
+<div class="card">
+<table>
+  <tr><th>类别</th><th>函数</th></tr>
+  <tr><td><strong>均线类 (15)</strong></td><td>BBANDS, DEMA, EMA, HT_TRENDLINE, MA, MAMA, MIDPOINT, MIDPRICE, SAR, SAREXT, SMA, T3, TEMA, TRIMA, WMA</td></tr>
+  <tr><td><strong>动量类 (21)</strong></td><td>ADX, ADXR, APO, AROON, AROONOSC, BOP, CCI, CMO, DX, MACD, MACDEXT, MACDFIX, MFI, MINUS_DI, MINUS_DM, MOM, PLUS_DI, PLUS_DM, PPO, ROC, ROCR, ROCR100, RSI, STOCH, STOCHF, STOCHRSI, TRIX, ULTOSC, WILLR</td></tr>
+  <tr><td><strong>成交量 (3)</strong></td><td>AD (Chaikin), ADOSC, OBV</td></tr>
+  <tr><td><strong>波动率 (3)</strong></td><td>ATR, NATR, TRANGE</td></tr>
+  <tr><td><strong>价格变换 (4)</strong></td><td>AVGPRICE, MEDPRICE, TYPPRICE, WCLPRICE</td></tr>
+  <tr><td><strong>统计 (8)</strong></td><td>BETA, CORREL, LINEARREG, LINEARREG_ANGLE, LINEARREG_INTERCEPT, LINEARREG_SLOPE, STDDEV, TSF, VAR</td></tr>
+  <tr><td><strong>K线形态 (50+)</strong></td><td>吞没/十字星/锤子线/启明星/黄昏星/三只乌鸦... 通过kline()函数调用</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s8">八、扩展技术指标 <span class="badge b-blue">12个</span></h2></div>
+<div class="grid2">
+<div class="grid-item"><h4>PPSR</h4><code>枢轴点支撑阻力 (7级)</code></div>
+<div class="grid-item"><h4>STOK / STO</h4><code>随机振荡器 (原始/EMA/SMA)</code></div>
+<div class="grid-item"><h4>MassI</h4><code>梅斯指数 (反转信号)</code></div>
+<div class="grid-item"><h4>Vortex</h4><code>漩涡指标 (趋势方向)</code></div>
+<div class="grid-item"><h4>KST</h4><code>多周期动量确认指标</code></div>
+<div class="grid-item"><h4>TSI</h4><code>双重平滑真实强度指数</code></div>
+<div class="grid-item"><h4>ACCDIST</h4><code>累计派发线ROC</code></div>
+<div class="grid-item"><h4>FORCE</h4><code>力量指数</code></div>
+<div class="grid-item"><h4>EOM</h4><code> ease of movement</code></div>
+<div class="grid-item"><h4>COPP</h4><code>Coppock曲线 (长线动量)</code></div>
+<div class="grid-item"><h4>KELCH</h4><code>肯特纳通道</code></div>
+<div class="grid-item"><h4>DONCH</h4><code>唐奇安通道</code></div>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s9">九、财务指标 <span class="badge b-ok">120+</span></h2></div>
+<div class="card">
+<p>来自Tushare astock_finance_indicator表，涵盖：</p>
+<table>
+  <tr><td><strong>盈利类</strong></td><td>eps, roe, roa, grossMargin, netProfitMargin, opIncome, ebit, ebitda</td></tr>
+  <tr><td><strong>成长类</strong></td><td>dtEps, totalRevenuePs, revenuePs, fcff, fcfe (同比增长率)</td></tr>
+  <tr><td><strong>估值类</strong></td><td>pe, peTtm, pb, ps, psTtm, dvRatio, dvTtm, totalMv, circMv</td></tr>
+  <tr><td><strong>偿债类</strong></td><td>currentRatio, quickRatio, cashRatio, debtToAssets</td></tr>
+  <tr><td><strong>运营类</strong></td><td>arTurn, caTurn, faTurn, assetsTurn</td></tr>
+  <tr><td><strong>股本类</strong></td><td>totalShare, floatShare, freeShare, capitalResePs, surplusResePs, undistProfitPs</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s10">十、资金流与涨跌停</h2></div>
+<div class="card">
+<h3>moneyflow — 资金流向</h3>
+<p>按订单大小分4档：小单/中单/大单/超大单，每档含买入量+买入额+卖出量+卖出额，共16个字段 + 净流入量和净流入额。</p>
+<h3>limit — 涨跌停</h3>
+<p>涨跌停板数据：振幅/封板比例/封流比/封单金额/首次涨停时间/最后涨停时间/开板次数/涨停强度/涨停类型。</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="cat-header"><h2 id="s11">十一、FinHack → 聚宽 移植指南</h2></div>
+<div class="card">
+<h3>公式引擎函数 → 聚宽 Factor</h3>
+<div class="formula">
+<span class="fcm"># FinHack: rank(ts_sum($close, 20) / 20 / $close)</span>
+<span class="fc">class MA20_RATIO(Factor):
+    name = 'ma20_ratio'
+    max_window = 20
+    dependencies = ['close']
+    def calc(self, data):
+        c = data['close']
+        return c.iloc[-20:].mean() / c.iloc[-1]</span>
+</div>
+<h3>Alpha101 → 聚宽</h3>
+<p>读取alpha101文件中的公式 → 理解逻辑 → 翻译为 Factor 子类的 calc() 方法。</p>
+<h3>TA-Lib指标 → 聚宽</h3>
+<p>FinHack使用talib库，聚宽需用jqfactor的dependencies+手动实现（如MACD=EMA12-EMA26，RSI=涨幅均值/总波动均值）。</p>
+<h3>AI挖掘 → 聚宽</h3>
+<p>FinHack用gplearn/GPT/Kimi自动发现因子公式 → 手动验证后移植到聚宽Factor类。</p>
+</div>
+
+<hr style="border-color:var(--border);margin:40px 0">
+<p style="text-align:center;color:var(--dim);font-size:.9em">FinHack (neoctopus/finhack) · 生成: 2025-06-25</p>
+</body></html>

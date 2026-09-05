@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alphalens 因子分析库 — 完整参考手册</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--dim:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d2991d;--red:#f85149;--purple:#a371f7;--cyan:#39c5cf}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;line-height:1.6;max-width:1200px;margin:0 auto;padding:20px}
+  h1{font-size:2em;margin:20px 0 10px;color:#fff;border-bottom:2px solid var(--border);padding-bottom:10px}
+  h2{font-size:1.5em;margin:40px 0 15px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:1.2em;margin:25px 0 10px;color:var(--green)}
+  h4{font-size:1.05em;margin:20px 0 8px;color:var(--orange)}
+  p,li{margin:6px 0}
+  nav.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:20px 0}
+  nav.toc h2{margin:0 0 12px;font-size:1.2em;color:#fff;border:none}
+  nav.toc ol{padding-left:20px;columns:2}
+  nav.toc li{margin:4px 0;font-size:.95em}
+  .stats{display:flex;gap:15px;flex-wrap:wrap;margin:15px 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 18px;text-align:center;min-width:100px}
+  .stat .num{font-size:1.8em;font-weight:bold;color:var(--accent)}
+  .stat .lbl{font-size:.85em;color:var(--dim)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:15px 0}
+  .card h3{margin-top:0}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.8em;font-weight:bold;margin-right:6px}
+  .b-blue{background:#1a2a3a;color:var(--accent)} .b-green{background:#1f3a2c;color:var(--green)} .b-orange{background:#2a1f1a;color:var(--orange)} .b-purple{background:#2a1a2a;color:var(--purple)}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:12px;margin:10px 0}
+  .fn-card{background:#1c2333;border:1px solid var(--border);border-radius:6px;padding:15px 18px}
+  .fn-card h4{margin:0 0 8px;font-size:1em}
+  .fn-card .sig{color:var(--green);font-family:'Consolas',monospace;font-size:.9em}
+  .fn-card .params{color:var(--dim);font-size:.85em;margin:6px 0}
+  .fn-card .desc{font-size:.9em}
+  .formula{background:#0d1117;border-left:3px solid var(--accent);padding:12px 16px;margin:10px 0;font-family:'Consolas','Courier New',monospace;font-size:.9em;overflow-x:auto;white-space:pre-wrap}
+  .fc{color:var(--green)} .fcm{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9em}
+  th{background:#1c2333;color:var(--accent);padding:8px 12px;text-align:left}
+  td{padding:7px 12px;border-top:1px solid var(--border)}
+  tr:hover{background:#1a1f2b}
+  code{background:#1c2333;color:var(--green);padding:1px 6px;border-radius:3px;font-family:'Consolas',monospace;font-size:.95em}
+  .cat-header{background:linear-gradient(135deg,#1c2333,#161b22);border:1px solid var(--border);border-radius:8px;padding:15px 20px;margin:30px 0 15px}
+  .cat-header h2{margin:0;border:none}
+  .cat-header p{color:var(--dim);margin:5px 0 0}
+  .workflow{background:#0d1117;border-radius:8px;padding:20px;margin:15px 0;font-family:monospace;font-size:.9em;line-height:2}
+  .warn{background:#2a1f12;border:1px solid #6b4a1f;border-radius:6px;padding:12px 16px;margin:10px 0}
+  .warn::before{content:"⚠️ 重要";display:block;font-weight:bold;color:var(--orange);margin-bottom:6px}
+</style>
+</head>
+<body>
+<h1>📊 Alphalens 因子分析库 — 完整参考手册</h1>
+<p style="color:var(--dim)">alphalens-reloaded v0.4.6 (Stefan Jansen) · 因子绩效分析标准库 · 20+ API函数 + 20+ 可视化函数</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">14</div><div class="lbl">计算函数</div></div>
+  <div class="stat"><div class="num">22</div><div class="lbl">可视化函数</div></div>
+  <div class="stat"><div class="num">6</div><div class="lbl">Tear Sheet</div></div>
+  <div class="stat"><div class="num">3</div><div class="lbl">分析维度</div></div>
+</div>
+
+<nav class="toc"><h2>📑 目录</h2>
+<ol>
+  <li><a href="#s1">标准工作流程 (10步)</a></li>
+  <li><a href="#s2">get_clean_factor_and_forward_returns — 数据准备</a></li>
+  <li><a href="#s3">Returns分析 (5个函数)</a></li>
+  <li><a href="#s4">IC分析 (2个函数)</a></li>
+  <li><a href="#s5">换手率分析 (2个函数)</a></li>
+  <li><a href="#s6">事件/累计收益 (5个函数)</a></li>
+  <li><a href="#s7">6个Tear Sheet</a></li>
+  <li><a href="#s8">22个可视化函数</a></li>
+  <li><a href="#s9">完整代码示例 (可直接运行)</a></li>
+  <li><a href="#s10">因子评估标准卡</a></li>
+</ol></nav>
+
+<!-- S1 -->
+<div class="cat-header"><h2 id="s1">一、标准工作流程 (10步)</h2></div>
+<div class="workflow">
+<span class="fcm"># Step 1: 准备因子数据 (MultiIndex Series)</span>
+<span class="fc">factor = pd.Series(values, index=pd.MultiIndex.from_tuples([(date,asset),...]))</span>
+<br>
+<span class="fcm"># Step 2: 准备价格数据 (宽表 DataFrame)</span>
+<span class="fc">prices = pd.DataFrame(...)&nbsp;&nbsp;# index=日期, columns=股票代码</span>
+<br>
+<span class="fcm"># Step 3: 准备行业映射 (可选)</span>
+<span class="fc">groupby = {'000001.XSHG': '银行', '000002.XSHG': '房地产', ...}</span>
+<br>
+<span class="fcm"># Step 4: 数据清洗与对齐 (核心一步)</span>
+<span class="fc">factor_data = al.utils.get_clean_factor_and_forward_returns(</span>
+<span class="fc">&nbsp;&nbsp;&nbsp;&nbsp;factor, prices, groupby=groupby, quantiles=5, periods=(1,5,10))</span>
+<br>
+<span class="fcm"># Step 5: Returns分析</span>
+<span class="fc">mean_ret = al.performance.mean_return_by_quantile(factor_data)</span>
+<span class="fc">al.plotting.plot_quantile_returns_bar(mean_ret)&nbsp;&nbsp;# 一图看懂</span>
+<br>
+<span class="fcm"># Step 6: IC分析</span>
+<span class="fc">ic = al.performance.factor_information_coefficient(factor_data)</span>
+<span class="fc">al.plotting.plot_ic_ts(ic)&nbsp;&nbsp;# IC时间序列</span>
+<br>
+<span class="fcm"># Step 7: 换手率分析</span>
+<span class="fc">autocorr = al.performance.factor_rank_autocorrelation(factor_data)</span>
+<br>
+<span class="fcm"># Step 8-10: 一键出报告</span>
+<span class="fc">al.tears.create_full_tear_sheet(factor_data)&nbsp;&nbsp;# 完整报告</span>
+</div>
+
+<!-- S2 -->
+<div class="cat-header"><h2 id="s2">二、数据准备函数 <span class="badge b-blue">最重要</span></h2></div>
+<div class="card">
+<h3>get_clean_factor_and_forward_returns()</h3>
+<p style="color:var(--accent)">整个Alphalens的入口，所有后续分析都依赖它。</p>
+
+<table>
+  <tr><th style="width:20%">参数</th><th style="width:15%">类型/默认值</th><th>说明</th></tr>
+  <tr><td><code>factor</code></td><td>pd.Series (MultiIndex)</td><td>必须。索引 (date, asset)，值=因子值</td></tr>
+  <tr><td><code>prices</code></td><td>pd.DataFrame</td><td>必须。index=日期, columns=股票代码</td></tr>
+  <tr><td><code>groupby</code></td><td>Series/dict, None</td><td>行业分组。dict={asset: group_name}</td></tr>
+  <tr><td><code>binning_by_group</code></td><td>bool, False</td><td>是否在组内分别计算分位数</td></tr>
+  <tr><td><code>quantiles</code></td><td>int/seq, 5</td><td>分组数。5=分5组（推荐）</td></tr>
+  <tr><td><code>periods</code></td><td>tuple, (1,5,10)</td><td>前向收益周期（天）</td></tr>
+  <tr><td><code>filter_zscore</code></td><td>int/None, 20</td><td>⚠ 离群值过滤阈值。设为None避免前视偏差</td></tr>
+  <tr><td><code>max_loss</code></td><td>float, 0.35</td><td>最大允许数据丢弃比例（超则报错）</td></tr>
+</table>
+
+<h4>返回值: MultiIndex DataFrame</h4>
+<table>
+  <tr><th>列名</th><th>含义</th></tr>
+  <tr><td><code>1D, 5D, 10D</code></td><td>各周期的前向收益率</td></tr>
+  <tr><td><code>factor</code></td><td>原始因子值</td></tr>
+  <tr><td><code>factor_quantile</code></td><td>因子分位数组号 (1=最低, 5=最高)</td></tr>
+  <tr><td><code>group</code></td><td>行业分组（若传入groupby）</td></tr>
+</table>
+
+<div class="warn"><strong>filter_zscore陷阱</strong>：默认值=20会基于<strong>全样本</strong>的均值和标准差过滤离群值，引入前视偏差。学术研究和实盘场景请设为 <code>filter_zscore=None</code>。</div>
+</div>
+
+<!-- S3 -->
+<div class="cat-header"><h2 id="s3">三、Returns 分析 — 5个核心函数</h2></div>
+
+<div class="grid2">
+<div class="fn-card">
+<h4>mean_return_by_quantile()</h4>
+<div class="sig">(factor_data, by_date=False, by_group=False, demeaned=True, group_adjust=False)</div>
+<div class="desc">计算每个因子分位组的平均前向收益。返回(mean_ret, std_err)。<br><strong>最常用指标</strong>：看分组收益是否单调递增。</div>
+</div>
+
+<div class="fn-card">
+<h4>compute_mean_returns_spread()</h4>
+<div class="sig">(mean_returns, upper_quant, lower_quant, std_err=None)</div>
+<div class="desc">计算顶组与底组的收益差（多空利差）。值越大说明因子区分度越好。</div>
+</div>
+
+<div class="fn-card">
+<h4>factor_returns()</h4>
+<div class="sig">(factor_data, demeaned=True, group_adjust=False, equal_weight=False, by_asset=False)</div>
+<div class="desc">因子加权组合的周期收益。demeaned=True=多空组合，equal_weight=True=等权。<br>分位数组间可比较：Q5-Q1利差是否显著。</div>
+</div>
+
+<div class="fn-card">
+<h4>factor_alpha_beta()</h4>
+<div class="sig">(factor_data, returns=None, demeaned=True, group_adjust=False, equal_weight=False)</div>
+<div class="desc">OLS回归：因子组合收益 = α + β × 市场均收益 + ε<br>α=超额收益(年化)，β=市场暴露。α越大越好。</div>
+</div>
+
+<div class="fn-card">
+<h4>factor_cumulative_returns()</h4>
+<div class="sig">(factor_data, period, long_short=True, group_neutral=False, equal_weight=False)</div>
+<div class="desc">模拟因子组合的累计收益曲线。指定period(如'5D')查看该周期的累计表现。</div>
+</div>
+</div>
+
+<!-- S4 -->
+<div class="cat-header"><h2 id="s4">四、IC 分析 — 2个核心函数</h2></div>
+
+<div class="grid2">
+<div class="fn-card">
+<h4>factor_information_coefficient()</h4>
+<div class="sig">(factor_data, group_adjust=False, by_group=False)</div>
+<div class="desc"><strong>Spearman Rank IC</strong>：每日因子值与N期前向收益的秩相关系数。<br>返回DataFrame，index=日期，columns=各周期IC序列。<br>IC均值>0.03=有效，IC_IR>0.3=优秀。</div>
+</div>
+
+<div class="fn-card">
+<h4>mean_information_coefficient()</h4>
+<div class="sig">(factor_data, group_adjust=False, by_group=False, by_time=None)</div>
+<div class="desc">按时间/组聚合IC。by_time='M'=月均IC，by_time='W'=周均IC。<br>月均IC热力图可看出因子在哪些月份有效。</div>
+</div>
+</div>
+
+<div class="formula">
+<span class="fcm"># IC关键指标计算</span>
+<span class="fc">IC = corr(factor[t], forward_return[t+period])&nbsp;&nbsp;# Spearman秩相关</span>
+<span class="fc">IC_mean = mean(IC)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 因子预测能力</span>
+<span class="fc">IC_IR  = IC_mean / std(IC)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 预测稳定性 (Information Ratio)</span>
+<span class="fc">t_stat = IC_mean / (std(IC)/sqrt(n))&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 统计显著性</span>
+</div>
+
+<!-- S5 -->
+<div class="cat-header"><h2 id="s5">五、换手率分析 — 2个核心函数</h2></div>
+
+<div class="grid2">
+<div class="fn-card">
+<h4>quantile_turnover()</h4>
+<div class="sig">(quantile_factor, quantile, period=1)</div>
+<div class="desc">某分位组内，本期与上期成员不重合的比例。<br>高换手率=因子值波动大=策略交易成本高。<br>均值<0.2=低换手（好），>0.5=高换手（谨慎）。</div>
+</div>
+
+<div class="fn-card">
+<h4>factor_rank_autocorrelation()</h4>
+<div class="sig">(factor_data, period=1)</div>
+<div class="desc">因子排名的自相关性。<br>接近1=因子值高度稳定（换手率低但可能已失效）<br>接近0=因子值随机变化<br>理想区间：0.85~0.95</div>
+</div>
+</div>
+
+<!-- S6 -->
+<div class="cat-header"><h2 id="s6">六、事件/累计收益分析 — 5个函数</h2></div>
+<div class="grid2">
+<div class="fn-card"><h4>common_start_returns()</h4><div class="sig">(factor, returns, before, after, cumulative=False, mean_by_date=False, demean_by=None)</div><div class="desc">对齐所有因子日期为共同起点(-before到+after)，计算窗口内收益。</div></div>
+<div class="fn-card"><h4>average_cumulative_return_by_quantile()</h4><div class="sig">(factor_data, returns, periods_before=10, periods_after=15, demeaned=True, group_adjust=False, by_group=False)</div><div class="desc">因子日期前后窗口内，各分位组的平均累计收益。看因子信号发出前后的收益行为。</div></div>
+<div class="fn-card"><h4>factor_weights()</h4><div class="sig">(factor_data, demeaned=True, group_adjust=False, equal_weight=False)</div><div class="desc">从因子值到组合权重的转换。demeaned=做多高因子值+做空低因子值。</div></div>
+<div class="fn-card"><h4>cumulative_returns()</h4><div class="sig">(returns)</div><div class="desc">将日收益序列转为累计收益（起始值=1）。</div></div>
+<div class="fn-card"><h4>create_pyfolio_input()</h4><div class="sig">(factor_data, period, capital=None, long_short=True, group_neutral=False)</div><div class="desc">生成pyfolio兼容的收益+仓位+基准数据，用于进一步策略分析。</div></div>
+</div>
+
+<!-- S7 -->
+<div class="cat-header"><h2 id="s7">七、6个 Tear Sheet (一键出报告)</h2></div>
+<div class="card">
+<table>
+  <tr><th>Tear Sheet</th><th>包含内容</th><th>何时用</th></tr>
+  <tr><td><code>create_full_tear_sheet()</code></td><td>全部：统计表+Returns+IC+换手率</td><td>因子初筛，一眼看全貌</td></tr>
+  <tr><td><code>create_returns_tear_sheet()</code></td><td>分组收益柱状图+小提琴图+利差时间序列+累计收益曲线+因子收益α/β</td><td>确认因子有正收益</td></tr>
+  <tr><td><code>create_information_tear_sheet()</code></td><td>IC摘要表+IC时序图+IC直方图+IC Q-Q图+月度IC热力图</td><td>验证因子预测能力稳定</td></tr>
+  <tr><td><code>create_turnover_tear_sheet()</code></td><td>换手率摘要表+顶/底组分位换手图+自相关图</td><td>评估交易成本</td></tr>
+  <tr><td><code>create_summary_tear_sheet()</code></td><td>Returns+IC+换手的浓缩版</td><td>PDF报告、演示</td></tr>
+  <tr><td><code>create_event_returns_tear_sheet()</code></td><td>因子日期前后窗口的累计收益(按分位组)</td><td>分析因子信号的时机</td></tr>
+</table>
+</div>
+
+<!-- S8 -->
+<div class="cat-header"><h2 id="s8">八、22个可视化函数 <span class="badge b-purple">全部</span></h2></div>
+<div class="grid2">
+<div class="fn-card"><h4>plot_quantile_returns_bar()</h4><div class="desc">各分位组平均收益柱状图 ⭐ 必看</div></div>
+<div class="fn-card"><h4>plot_quantile_returns_violin()</h4><div class="desc">各分位组收益小提琴图（分布形状）</div></div>
+<div class="fn-card"><h4>plot_mean_quantile_returns_spread_time_series()</h4><div class="desc">多空利差时间序列（含1月MA和误差带）⭐</div></div>
+<div class="fn-card"><h4>plot_cumulative_returns_by_quantile()</h4><div class="desc">各分位组累计收益曲线（扇形图）⭐</div></div>
+<div class="fn-card"><h4>plot_cumulative_returns()</h4><div class="desc">因子组合累计收益</div></div>
+<div class="fn-card"><h4>plot_ic_ts()</h4><div class="desc">IC时间序列图（含1月MA）⭐ 必看</div></div>
+<div class="fn-card"><h4>plot_ic_hist()</h4><div class="desc">IC分布直方图+KDE</div></div>
+<div class="fn-card"><h4>plot_ic_qq()</h4><div class="desc">IC Q-Q图 (vs正态/t分布)</div></div>
+<div class="fn-card"><h4>plot_monthly_ic_heatmap()</h4><div class="desc">月度IC热力图（年×月）⭐</div></div>
+<div class="fn-card"><h4>plot_ic_by_group()</h4><div class="desc">各行业IC柱状图</div></div>
+<div class="fn-card"><h4>plot_quantile_statistics_table()</h4><div class="desc">各分位组统计表 (min/max/mean/std/count)</div></div>
+<div class="fn-card"><h4>plot_returns_table()</h4><div class="desc">收益摘要表 (α/β/顶组收益/底组收益/利差bps)</div></div>
+<div class="fn-card"><h4>plot_turnover_table()</h4><div class="desc">换手率摘要表</div></div>
+<div class="fn-card"><h4>plot_information_table()</h4><div class="desc">IC摘要表 (均值/std/IR/t值/p值/偏度/峰度)</div></div>
+<div class="fn-card"><h4>plot_top_bottom_quantile_turnover()</h4><div class="desc">顶/底组分位换手率时序图</div></div>
+<div class="fn-card"><h4>plot_factor_rank_auto_correlation()</h4><div class="desc">因子排名自相关时序图</div></div>
+<div class="fn-card"><h4>plot_quantile_average_cumulative_return()</h4><div class="desc">因子日期前后的平均累计收益 (by_quantile)</div></div>
+<div class="fn-card"><h4>plot_events_distribution()</h4><div class="desc">事件分布直方图</div></div>
+</div>
+
+<!-- S9 -->
+<div class="cat-header"><h2 id="s9">九、完整代码示例 <span class="badge b-green">可直接运行</span></h2></div>
+<div class="formula">
+<span class="fcm"># === 完整因子分析 (本地Python, 用yfinance获取数据) ===</span>
+<span class="fc">import alphalens as al</span>
+<span class="fc">import yfinance as yf</span>
+<span class="fc">import pandas as pd</span>
+<span class="fc">import numpy as np</span>
+
+<span class="fcm"># 1. 获取数据</span>
+<span class="fc">tickers = ['AAPL','MSFT','GOOGL','AMZN','META','NVDA','TSLA']</span>
+<span class="fc">data = yf.download(tickers, start='2023-01-01', end='2024-12-31')</span>
+<span class="fc">prices = data['Adj Close']</span>
+
+<span class="fcm"># 2. 构造因子 (例: 20日动量)</span>
+<span class="fc">factor = prices.pct_change(20).stack()</span>
+<span class="fc">factor.index = factor.index.set_names(['date','asset'])</span>
+
+<span class="fcm"># 3. 数据准备</span>
+<span class="fc">factor_data = al.utils.get_clean_factor_and_forward_returns(</span>
+<span class="fc">    factor, prices, quantiles=5, periods=(1,5,20)</span>
+<span class="fc">)</span>
+
+<span class="fcm"># 4. 一键分析</span>
+<span class="fc">al.tears.create_full_tear_sheet(factor_data)</span>
+
+<span class="fcm"># 5. 手动指标</span>
+<span class="fc">ic = al.performance.factor_information_coefficient(factor_data)</span>
+<span class="fc">print(f"IC_1D mean: {ic['1D'].mean():.4f}, IR: {ic['1D'].mean()/ic['1D'].std():.3f}")</span>
+<span class="fc">print(f"IC_5D mean: {ic['5D'].mean():.4f}, IR: {ic['5D'].mean()/ic['5D'].std():.3f}")</span>
+</div>
+
+<!-- S10 -->
+<div class="cat-header"><h2 id="s10">十、因子评估标准卡</h2></div>
+<div class="card">
+<table>
+  <tr><th>指标</th><th>优秀</th><th>合格</th><th>不合格</th></tr>
+  <tr><td>IC均值 (abs)</td><td>> 0.05</td><td>0.03 ~ 0.05</td><td>< 0.03</td></tr>
+  <tr><td>IC_IR</td><td>> 0.50</td><td>0.30 ~ 0.50</td><td>< 0.30</td></tr>
+  <tr><td>IC>0 比例</td><td>> 60%</td><td>50% ~ 60%</td><td>< 50%</td></tr>
+  <tr><td>多空年化收益</td><td>> 15%</td><td>10% ~ 15%</td><td>< 10%</td></tr>
+  <tr><td>因子自相关</td><td>0.85 ~ 0.95</td><td>> 0.95 或 < 0.85</td><td>≈ 0 或 ≈ 1</td></tr>
+  <tr><td>分组收益单调性</td><td>严格单调</td><td>大致单调</td><td>无规律</td></tr>
+  <tr><td>顶组月换手率</td><td>< 20%</td><td>20% ~ 40%</td><td>> 50%</td></tr>
+  <tr><td>alpha (年化)</td><td>> 3%</td><td>1% ~ 3%</td><td>< 1% 或负值</td></tr>
+</table>
+</div>
+
+<hr style="border-color:var(--border);margin:40px 0">
+<p style="text-align:center;color:var(--dim);font-size:.9em">alphalens-reloaded v0.4.6 · 生成: 2025-06-25</p>
+</body></html>

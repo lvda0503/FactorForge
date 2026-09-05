@@ -1,0 +1,13 @@
+# Sentiment Factor Module — additional dependencies
+# Install: pip install -r requirements.txt
+
+# News fetching
+akshare>=1.12.0        # Chinese financial data (free, no token)
+
+# Chinese sentiment (lightweight, no GPU)
+snownlp>=0.12.3         # Chinese NLP sentiment
+
+# FinBERT (optional, requires GPU for speed)
+# transformers>=4.30.0  # HuggingFace transformers
+# torch>=2.0.0          # PyTorch
+# Uncomment above and run: python -c "from transformers import pipeline; pipeline('text-classification', model='ProsusAI/finbert')"

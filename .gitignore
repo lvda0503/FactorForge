@@ -1,0 +1,61 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.so
+
+# ── 敏感信息（QMT 实盘策略，含账号等）──
+# QMT 实盘策略文件含账号/路径等敏感信息，不入库
+qmt/*_strategy*.py
+qmt/*strategy*.py
+**/FI_PPO_*.py
+**/probe_*.py
+**/FIPPO*.py
+**/FIPPOSTRATEGY.py
+
+# ── 研究痕迹（含本地路径的实验脚本）──
+experiments/archive/
+experiments/run_*.py
+experiments/smoke_*.py
+experiments/quick_*.py
+
+# ── 数据缓存（体积大，可重新下载）──
+data_cache/
+*.pkl
+*.csv
+*.json
+*.parquet
+*.h5
+*.hdf5
+
+# ── 模型权重（体积大）──
+experiments/paper/v7_models/
+experiments/paper/v9_models/
+*.pt
+*.pth
+*.ckpt
+
+# ── 论文编译产物 ──
+experiments/paper/*.pdf
+experiments/paper/*.aux
+experiments/paper/*.log
+experiments/paper/*.out
+experiments/paper/*.toc
+
+# ── 日志 ──
+*.log
+logs/
+D:/data/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+
+# ── 敏感配置模板 ──
+config.local.py
+.env
+.env.*

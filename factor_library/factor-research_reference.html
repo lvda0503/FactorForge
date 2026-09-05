@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factor-Research ML因子研究 — 完整参考手册</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--dim:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d2991d;--red:#f85149;--purple:#a371f7;--cyan:#39c5cf}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;line-height:1.6;max-width:1300px;margin:0 auto;padding:20px}
+  h1{font-size:2em;margin:20px 0 10px;color:#fff;border-bottom:2px solid var(--border);padding-bottom:10px}
+  h2{font-size:1.5em;margin:40px 0 15px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:1.2em;margin:25px 0 10px;color:var(--green)}
+  h4{font-size:1.05em;margin:20px 0 8px;color:var(--orange)}
+  p,li{margin:6px 0}
+  nav.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:20px 0}
+  nav.toc h2{margin:0 0 12px;font-size:1.2em;color:#fff;border:none}
+  nav.toc ol{padding-left:20px;columns:2}
+  nav.toc li{margin:4px 0;font-size:.95em}
+  .stats{display:flex;gap:15px;flex-wrap:wrap;margin:15px 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 18px;text-align:center;min-width:100px}
+  .stat .num{font-size:1.8em;font-weight:bold;color:var(--accent)}
+  .stat .lbl{font-size:.85em;color:var(--dim)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 25px;margin:15px 0}
+  .card h3{margin-top:0}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.8em;font-weight:bold;margin-right:6px}
+  .b-g{background:#1f3a2c;color:var(--green)} .b-b{background:#1a2a3a;color:var(--accent)} .b-o{background:#2a1f1a;color:var(--orange)} .b-p{background:#2a1a2a;color:var(--purple)}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:10px;margin:10px 0}
+  .fn-card{background:#1c2333;border:1px solid var(--border);border-radius:6px;padding:12px 16px}
+  .fn-card h4{margin:0 0 6px}
+  .fn-card .formula-text{font-family:'Consolas',monospace;font-size:.85em;color:var(--green);margin:6px 0;line-height:1.8}
+  .fn-card .desc{font-size:.85em;color:var(--dim)}
+  .formula{background:#0d1117;border-left:3px solid var(--accent);padding:12px 16px;margin:10px 0;font-family:'Consolas','Courier New',monospace;font-size:.9em;overflow-x:auto;white-space:pre-wrap;line-height:1.7}
+  .fc{color:var(--green)} .fcm{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9em}
+  th{background:#1c2333;color:var(--accent);padding:8px 12px;text-align:left}
+  td{padding:7px 12px;border-top:1px solid var(--border)}
+  tr:hover{background:#1a1f2b}
+  code{background:#1c2333;color:var(--green);padding:1px 6px;border-radius:3px;font-family:'Consolas',monospace;font-size:.9em}
+  .cat-header{background:linear-gradient(135deg,#1c2333,#161b22);border:1px solid var(--border);border-radius:8px;padding:15px 20px;margin:30px 0 15px}
+  .cat-header h2{margin:0;border:none}
+  .cat-header p{color:var(--dim);margin:5px 0 0}
+  .pipeline{background:#0d1117;border-radius:8px;padding:20px;margin:15px 0;font-family:monospace;font-size:.85em;line-height:2.2;text-align:center}
+  .perf-bar{display:flex;gap:4px;align-items:flex-end;height:120px;margin:15px 0;padding:0 10px}
+  .perf-item{flex:1;text-align:center;border-radius:4px 4px 0 0;padding-top:8px;font-size:.75em;font-weight:bold}
+  .arch-box{background:#1c2333;border:1px solid var(--border);border-radius:6px;padding:15px;margin:8px 0}
+  .arch-box h4{color:var(--accent);margin-top:0}
+</style>
+</head>
+<body>
+<h1>🤖 Factor-Research — ML因子研究项目 参考手册</h1>
+<p style="color:var(--dim)">完整Pipeline：因子生成(80+) → 特征选择 → ML建模(6种) → 回测 · IC=0.06476 (LSTM+ResNet, +72%)</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">6</div><div class="lbl">Phase流水线</div></div>
+  <div class="stat"><div class="num">80+</div><div class="lbl">生成因子</div></div>
+  <div class="stat"><div class="num">85</div><div class="lbl">最终精选因子</div></div>
+  <div class="stat"><div class="num">6</div><div class="lbl">DL模型</div></div>
+  <div class="stat"><div class="num">+72%</div><div class="lbl">vs Baseline</div></div>
+</div>
+
+<nav class="toc"><h2>📑 目录</h2>
+<ol>
+  <li><a href="#s1">项目全景Pipeline</a></li>
+  <li><a href="#s2">Phase 2: 日频Alpha因子 (24个)</a></li>
+  <li><a href="#s3">Phase 3: 高频Alpha因子 (21个)</a></li>
+  <li><a href="#s4">Phase 4: 四阶段特征选择</a></li>
+  <li><a href="#s5">Phase 5: 6种深度学习模型</a></li>
+  <li><a href="#s6">模型性能对比</a></li>
+  <li><a href="#s7">核心算子库函数</a></li>
+  <li><a href="#s8">聚宽移植指南</a></li>
+</ol></nav>
+
+<!-- S1 -->
+<div class="cat-header"><h2 id="s1">一、项目全景 Pipeline</h2></div>
+<div class="pipeline">
+<span class="fcm">Phase 1: 数据准备</span><br>
+  <span class="fc">分钟OHLCV (81.7M行) → 日频数据 + Barra因子 → wide_parquet</span><br>
+  <span class="fcm">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br>
+<span class="fcm">Phase 2: 日频因子生成</span><br>
+  <span class="fc">9 Alpha101 + 4 流动性 + 4 动量和波动率 + 4 技术 + 3 换手率相关</span><br>
+  <span class="fc">→ 24个因子 (data/factors/obtained_features/)</span><br>
+  <span class="fcm">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br>
+<span class="fcm">Phase 3: 高频因子生成</span><br>
+  <span class="fc">2 时间 + 3 技术 + 3 成交量 + 13 统计矩</span><br>
+  <span class="fc">→ 21个因子 (data/factors/obtained_features/)</span><br>
+  <span class="fcm">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br>
+<span class="fcm">Phase 4: 特征选择</span><br>
+  <span class="fc">IC筛选 (|IC|>0.02) → Spearman去重 (r<0.7) → Lasso/Ridge → LightGBM</span><br>
+  <span class="fc">→ ~85个精选因子 (data/factors/selected_factors/)</span><br>
+  <span class="fcm">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br>
+<span class="fcm">Phase 5: ML模型训练</span><br>
+  <span class="fc">Linear → DNN → DeepNet → AlexNet → LSTM+ResNet → Transformer</span><br>
+  <span class="fc">Optuna超参优化 + 滚动时间序列CV</span><br>
+  <span class="fcm">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br>
+<span class="fcm">Phase 6: 因子回测</span><br>
+  <span class="fc">分组分析(10组) + 多空对冲 + IC/IR/胜率/夏普/最大回撤/Calmar</span><br>
+</div>
+
+<!-- S2 -->
+<div class="cat-header"><h2 id="s2">二、Phase 2: 日频Alpha因子 <span class="badge b-g">24个</span></h2></div>
+
+<div class="card"><h3>Alpha101 经典因子 (9个)</h3>
+<div class="grid2">
+<div class="fn-card"><h4>alpha_001</h4><div class="formula-text">rank(close − ts_max(close, 20))</div><div class="desc">20日价格回撤排名</div></div>
+<div class="fn-card"><h4>alpha_002</h4><div class="formula-text">−1 × corr(rank(Δlog(vol),2), rank((c−o)/o), 6)</div><div class="desc">量变排名与日内收益的6日负相关</div></div>
+<div class="fn-card"><h4>alpha_003</h4><div class="formula-text">−1 × corr(rank(open), rank(vol), 10)</div></div>
+<div class="fn-card"><h4>alpha_004</h4><div class="formula-text">−1 × ts_rank(rank(low), 9)</div></div>
+<div class="fn-card"><h4>alpha_006</h4><div class="formula-text">−1 × corr(open, vol, 10)</div><div class="desc">裸相关性版</div></div>
+<div class="fn-card"><h4>alpha_007</h4><div class="formula-text">IF(adv20<vol, −ts_rank(|Δclose|,60)×sign(Δclose), −1)</div><div class="desc">放量日=动量方向，缩量=−1</div></div>
+<div class="fn-card"><h4>alpha_008</h4><div class="formula-text">−rank(Σopen₅⋅Σret₅ − delay(Σopen₅⋅Σret₅, 10))</div></div>
+<div class="fn-card"><h4>alpha_009</h4><div class="formula-text">IF(5d全是涨OR跌, Δclose, −Δclose)</div><div class="desc">条件动量/反转</div></div>
+<div class="fn-card"><h4>alpha_010</h4><div class="formula-text">rank(同alpha_009, 窗口=4)</div></div>
+</div></div>
+
+<div class="card"><h3>其他日频因子 (15个)</h3>
+<div class="grid2">
+<div class="fn-card"><h4>alpha_liq_01</h4><div class="formula-text">rank(Δvolume, 5)</div><div class="desc">流动性动量</div></div>
+<div class="fn-card"><h4>alpha_liq_02</h4><div class="formula-text">rank(Σvolume₂₀ / 20)</div><div class="desc">20日均量</div></div>
+<div class="fn-card"><h4>alpha_liq_03</h4><div class="formula-text">rank(turnover)</div></div>
+<div class="fn-card"><h4>alpha_liq_04</h4><div class="formula-text">rank(Δturnover, 5)</div><div class="desc">换手率动量</div></div>
+<div class="fn-card"><h4>alpha_vol_01</h4><div class="formula-text">rank(std(ret, 20))</div></div>
+<div class="fn-card"><h4>alpha_vol_02</h4><div class="formula-text">rank(max(high,10) / min(low,10) − 1)</div><div class="desc">价格振幅</div></div>
+<div class="fn-card"><h4>alpha_mom_01</h4><div class="formula-text">rank(close / delay(close,10) − 1)</div></div>
+<div class="fn-card"><h4>alpha_mom_02</h4><div class="formula-text">rank(close / delay(close,20) − 1)</div></div>
+<div class="fn-card"><h4>alpha_tech_01 — 价格位置(KDJ RSV)</h4><div class="formula-text">rank((close − min(low,20)) / (max(high,20) − min(low,20)))</div></div>
+<div class="fn-card"><h4>alpha_tech_02</h4><div class="formula-text">rank(corr(ret, vol, 5))</div><div class="desc">收益-量相关性</div></div>
+<div class="fn-card"><h4>alpha_tech_03</h4><div class="formula-text">rank((close − vwap) / close)</div><div class="desc">收盘价相对均价偏离</div></div>
+<div class="fn-card"><h4>alpha_tech_04 — MACD</h4><div class="formula-text">rank(EMA₁₂(close)−EMA₂₆(close) − EMA₉(macd))</div></div>
+<div class="fn-card"><h4>alpha_turn_01</h4><div class="formula-text">rank(Σturnover₅ / 5)</div></div>
+<div class="fn-card"><h4>alpha_corr_01</h4><div class="formula-text">rank(corr(rank(turnover), rank(vol), 5))</div></div>
+<div class="fn-card"><h4>alpha_corr_02</h4><div class="formula-text">rank(corr(close, vwap, 10))</div><div class="desc">收盘-VWAP相关</div></div>
+</div></div>
+
+<!-- S3 -->
+<div class="cat-header"><h2 id="s3">三、Phase 3: 高频Alpha因子 <span class="badge b-b">21个</span></h2></div>
+
+<div class="card"><h3>时间分布因子 (2个)</h3>
+<div class="grid2">
+<div class="fn-card"><h4>at_close_ratio</h4><div class="formula-text">Σ(14:00~15:30成交量) / Σ(全天成交量)</div><div class="desc">尾盘成交量占比 → 尾盘抢筹/出货信号</div></div>
+<div class="fn-card"><h4>at_open_ratio</h4><div class="formula-text">Σ(10:00~11:30成交量) / Σ(全天成交量)</div><div class="desc">早盘成交量占比 → 开盘活跃度</div></div>
+</div></div>
+
+<div class="card"><h3>日内技术因子 (3个)</h3>
+<div class="grid2">
+<div class="fn-card"><h4>realized_skewness</h4><div class="formula-text">Σclose³ × √n / (Σclose²)^1.5</div><div class="desc">日内价格偏度。正值=右偏(日内冲高)，负值=左偏(日内杀跌)</div></div>
+<div class="fn-card"><h4>high_close_volume_corr</h4><div class="formula-text">日内价量相关系数 (每股票-日)</div><div class="desc">正值=价量同向(健康)，负值=背离</div></div>
+<div class="fn-card"><h4>intraday_volatility</h4><div class="formula-text">std((close−open)/open) 每分钟</div><div class="desc">日内波动率。高值=剧烈波动日</div></div>
+</div></div>
+
+<div class="card"><h3>量价分布因子 (3个)</h3>
+<div class="grid2">
+<div class="fn-card"><h4>top_30_prod</h4><div class="formula-text">成交量Top30%分钟bar的复利收益: Π(1+r)</div><div class="desc">大成交量时段的收益 → 主力动向</div></div>
+<div class="fn-card"><h4>top_20_prod</h4><div class="formula-text">成交量Top20%分钟bar的复利收益</div><div class="desc">更严格的主力筛选</div></div>
+<div class="fn-card"><h4>hug_amount_percent</h4><div class="formula-text">Σ(vol≥μ+σ) / Σvol</div><div class="desc">大单成交占比。高值=机构行为明显</div></div>
+</div></div>
+
+<div class="card"><h3>高阶统计矩因子 (13个)</h3>
+<div class="grid2">
+<div class="fn-card"><h4>weighted_close</h4><div class="formula-text">Σ(close⋅vol) / (Σvol × mean(close))</div><div class="desc">量价加权 vs 等权的偏离度</div></div>
+<div class="fn-card"><h4>entropy</h4><div class="formula-text">−Σ pᵢ⋅log(pᵢ) 其中 pᵢ = volᵢ⋅closeᵢ/Σ(vol⋅close)</div><div class="desc">信息熵。低值=价量集中，高值=均匀分布</div></div>
+<div class="fn-card"><h4>diff_std / diff_mean</h4><div class="formula-text">std(Δvol) / mean(vol) &amp; mean(|Δvol/mean(vol)|)</div><div class="desc">成交量一阶差分的波动率与均值</div></div>
+<div class="fn-card"><h4>diff_std_amount</h4><div class="formula-text">std(Δamount) / mean(amount)</div><div class="desc">成交额一阶差分波动率</div></div>
+<div class="fn-card"><h4>diff_std_amount2</h4><div class="formula-text">std(Δamount, 2步) / mean(amount)</div><div class="desc">成交额二阶差分波动率</div></div>
+<div class="fn-card"><h4>diff2_mean</h4><div class="formula-text">mean(|Δvol(2步) / mean(vol)|)</div><div class="desc">成交量二阶差分均值</div></div>
+<div class="fn-card"><h4>weighted_close_sig (3阶)</h4><div class="formula-text">Σ(volᵢ/total⋅(closeᵢ−μ)³) / σ³</div><div class="desc">量价加权偏度</div></div>
+<div class="fn-card"><h4>weighted_close_sig1 (4阶)</h4><div class="formula-text">量价加权峰度</div><div class="desc">厚尾→极端波动风险</div></div>
+<div class="fn-card"><h4>weighted_close_sig2~5</h4><div class="formula-text">5~8阶量价加权矩</div><div class="desc">超高阶矩 → 捕捉日内微结构异常</div></div>
+</div></div>
+
+<!-- S4 -->
+<div class="cat-header"><h2 id="s4">四、Phase 4: 四阶段特征选择 <span class="badge b-o">~85因子</span></h2></div>
+
+<div class="arch-box">
+<h4>Stage 1: IC初筛</h4>
+<p>阈值的绝对值≥0.02的因子保留。同时还要求因子的首有效索引≤90（避免数据缺失过多的因子）。输出：IC_mean, IC_IR, start_idx等统计。</p>
+</div>
+<div class="arch-box">
+<h4>Stage 2: Spearman去相关</h4>
+<p>按 quality_score = |IC| × |IC_IR| 降序排列。贪心前向选择：仅当候选因子与所有已选因子的绝对Spearman相关 < 0.7 时才收录。每对因子的相关性按日期逐日计算后取均值。</p>
+</div>
+<div class="arch-box">
+<h4>Stage 3: Lasso + Ridge</h4>
+<p>Lasso (L1): 在α∈{0.0001,0.001,0.01,0.1,1.0}中5-fold CV选最优，保留系数非零的因子。<br>Ridge (L2): 同样CV选α，取系数绝对值Top N（N=lasso选出数量）。</p>
+</div>
+<div class="arch-box">
+<h4>Stage 4: LightGBM</h4>
+<p>参数：num_leaves=31, lr=0.05, 1000轮+early_stopping(100)。按gain importance选Top N（N≤50）。<br><br><strong>最终结果：Lasso ∪ LGBM → 再验证Spearman < 0.7 → ~85个因子</strong></p>
+</div>
+
+<!-- S5 -->
+<div class="cat-header"><h2 id="s5">五、Phase 5: 6种深度学习模型</h2></div>
+
+<div class="arch-box">
+<h4>1. Linear Regression — Baseline</h4>
+<p>sklearn LinearRegression()。直接展平(样本, 因子) → 预测。IC=0.03767。</p>
+</div>
+
+<div class="arch-box">
+<h4>2. DNN (3层全连接)</h4>
+<div class="formula-text">Input(n_factors) → Linear(128)→ReLU→BN→Drop(0.2) → Linear(64)→ReLU→BN→Drop(0.2) → Linear(32)→ReLU→BN→Drop(0.2) → Linear(1)</div>
+<p>IC=0.04234 (+12.4%)</p>
+</div>
+
+<div class="arch-box">
+<h4>3. DeepNet (残差网络)</h4>
+<div class="formula-text">Input → Linear(256)→ReLU → [ResBlock]×3 → Linear(1)
+ResBlock: Linear(h)→ReLU→BN→Drop(0.3) + Skip(Linear投影)</div>
+<p>IC=0.04992 (+32.5%)</p>
+</div>
+
+<div class="arch-box">
+<h4>4. AlexNet (1D CNN)</h4>
+<div class="formula-text">Conv1d(k=3)→ReLU→MaxPool(2) ×2 → AdaptiveAvgPool(1) → 2层FC → Linear(1)</div>
+<p>输入转置为(样本, 因子, 时间)。IC=0.03891 (+3.3%)</p>
+</div>
+
+<div class="arch-box">
+<h4>5. LSTM+ResNet — 🏆 最佳模型</h4>
+<div class="formula-text">BiLSTM(input, hidden=128) → output: (batch, seq, 256)
+→ Transpose → Conv1d(256,64)→BN→ReLU → ResConv(64,64,64)→BN→ReLU+Skip
+→ AdaptiveAvgPool(1) → Linear(64,1)</div>
+<p><strong>IC=0.06476 (+72.0%)</strong> · 双向LSTM捕捉时序依赖 + ResNet残差防止梯度消失</p>
+</div>
+
+<div class="arch-box">
+<h4>6. Transformer</h4>
+<div class="formula-text">Input Proj(d_model=128) + Learnable PE → TransformerEncoder(3层, 8头, dp=0.1)
+→ Mean Pool → Linear(64) → Linear(1)</div>
+<p>IC=0.05823 (+54.6%) · 注意力机制捕捉因子间交互</p>
+</div>
+
+<div class="arch-box">
+<h4>训练框架 (6个模型共用)</h4>
+<ul>
+  <li><strong>数据划分</strong>：滚动时间序列CV (120天train/30天val/30天test, 步长30天) — 严格防止前视偏差</li>
+  <li><strong>预处理</strong>：每日横截面Z-Score标准化，NaN填0</li>
+  <li><strong>优化器</strong>：Adam (weight_decay=1e-4, gradient_clip=1.0)</li>
+  <li><strong>调度器</strong>：ReduceLROnPlateau (factor=0.5, patience=5)</li>
+  <li><strong>早停</strong>：validation loss patience=10, restore best weights</li>
+  <li><strong>超参优化</strong>：Optuna TPE采样器 + Median Pruner</li>
+</ul>
+</div>
+
+<!-- S6 -->
+<div class="cat-header"><h2 id="s6">六、模型性能对比</h2></div>
+<div class="card">
+<table>
+  <tr><th>模型</th><th>Mean IC</th><th>IC Std</th><th>Max IC</th><th>Hit Rate</th><th>vs Baseline</th></tr>
+  <tr style="background:#1a2f1a"><td><strong>🏆 LSTM+ResNet</strong></td><td><strong>0.06476</strong></td><td>0.0234</td><td>0.0891</td><td>68.3%</td><td><strong>+72.0%</strong></td></tr>
+  <tr><td>Transformer</td><td>0.05823</td><td>0.0198</td><td>0.0756</td><td>64.1%</td><td>+54.6%</td></tr>
+  <tr><td>DeepNet (Residual)</td><td>0.04992</td><td>0.0187</td><td>0.0634</td><td>61.2%</td><td>+32.5%</td></tr>
+  <tr><td>DNN (3-layer)</td><td>0.04234</td><td>0.0156</td><td>0.0578</td><td>58.7%</td><td>+12.4%</td></tr>
+  <tr><td>AlexNet (1D CNN)</td><td>0.03891</td><td>0.0143</td><td>0.0523</td><td>56.9%</td><td>+3.3%</td></tr>
+  <tr><td>Linear Regression</td><td>0.03767</td><td>0.0134</td><td>0.0489</td><td>55.4%</td><td>Baseline</td></tr>
+</table>
+<h4 style="margin-top:15px">关键结论</h4>
+<ul>
+  <li>时序结构至关重要：LSTM+ResNet 和 Transformer > 纯前馈网络</li>
+  <li>残差连接显著：DeepNet (+32.5%) > DNN (+12.4%)</li>
+  <li>CNN单独效果一般：AlexNet (+3.3%)，搭配LSTM的ResNet才发挥价值</li>
+  <li>深度 > 宽度：简单的Linear Regression效果最差</li>
+</ul>
+</div>
+
+<!-- S7 -->
+<div class="cat-header"><h2 id="s7">七、核心算子库函数 <span class="badge b-g">10个</span></h2></div>
+<div class="card">
+<p>Factor-Research中构建因子时使用的核心运算符：</p>
+<table>
+  <tr><th>函数</th><th>实现</th><th>用途</th></tr>
+  <tr><td><code>ts_max(df, w)</code></td><td>df.rolling(w).max()</td><td>窗口最大值</td></tr>
+  <tr><td><code>ts_min(df, w)</code></td><td>df.rolling(w).min()</td><td>窗口最小值</td></tr>
+  <tr><td><code>ts_sum(df, w)</code></td><td>df.rolling(w).sum()</td><td>窗口和</td></tr>
+  <tr><td><code>ts_std_dev(df, w)</code></td><td>df.rolling(w).std()</td><td>窗口标准差</td></tr>
+  <tr><td><code>ts_delta(df, d)</code></td><td>df.diff(d)</td><td>N期差分</td></tr>
+  <tr><td><code>delay(df, d)</code></td><td>df.shift(d)</td><td>N期滞后</td></tr>
+  <tr><td><code>ts_rank(df, w)</code></td><td>rolling.apply(rank(pct).iloc[-1])</td><td>窗口内百分位排名</td></tr>
+  <tr><td><code>rank(df)</code></td><td>df.rank(axis=1, pct=True)</td><td>横截面百分位排名</td></tr>
+  <tr><td><code>correlation(x, y, w)</code></td><td>x.rolling(w).corr(y)</td><td>窗口相关系数</td></tr>
+  <tr><td><code>covariance(x, y, w)</code></td><td>x.rolling(w).cov(y)</td><td>窗口协方差</td></tr>
+</table>
+</div>
+
+<!-- S8 -->
+<div class="cat-header"><h2 id="s8">八、聚宽移植指南</h2></div>
+<div class="card">
+<h3>日频Alpha因子 → 聚宽Factor类</h3>
+<div class="formula">
+<span class="fcm"># alpha_001: rank(close - ts_max(close, 20))</span>
+<span class="fc">class ALPHA_001(Factor):
+    name = 'alpha_001'
+    max_window = 20
+    dependencies = ['close']
+    def calc(self, data):
+        c = data['close']
+        return (c.iloc[-1] - c.iloc[-20:].max()) / c.iloc[-1]</span>
+</div>
+
+<h3>高频因子 → 聚宽（需要分钟数据）</h3>
+<div class="warn">聚宽研究环境支持分钟数据（<code>get_price(..., frequency='1m')</code>），但回测策略只能用日频数据。高频因子需要先在研究环境验证，再考虑是否引入策略。</div>
+
+<h3>ML模型 → 聚宽</h3>
+<p>聚宽策略不支持PyTorch/TensorFlow。但可以：<br>1. 本地训练模型，导出预测信号<br>2. 在聚宽策略中读取预计算的信号<br>3. 或用sklearn的轻量模型（聚宽支持scikit-learn）</p>
+
+<h3>特征选择Pipeline → 聚宽单因子分析</h3>
+<div class="formula">
+<span class="fcm"># Factor-Research的4阶段选择 → 聚宽等价流程:</span>
+<span class="fc"># Stage 1: 单因子分析中的IC均值 (IC>0.03=有效)</span>
+<span class="fc"># Stage 2: 单因子分析中的因子相关性矩阵 (r<0.7)</span>
+<span class="fc"># Stage 3-4: 在本地做，或简化为IC_IR加权</span>
+</div>
+</div>
+
+<hr style="border-color:var(--border);margin:40px 0">
+<p style="text-align:center;color:var(--dim);font-size:.9em">Factor-Research (nuglifeleoji/Factor-Research) · 生成: 2025-06-25</p>
+</body></html>
